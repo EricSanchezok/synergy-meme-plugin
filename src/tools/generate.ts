@@ -1,7 +1,49 @@
 import type { PluginInput } from "@ericsanchezok/synergy-plugin"
-import { tool, type ToolResult } from "@ericsanchezok/synergy-plugin/tool"
+import { tool, type ToolContext, type ToolResult } from "@ericsanchezok/synergy-plugin/tool"
+import type z from "zod"
 import { templateById } from "../data/templates.generated"
 import { renderMemeSvg } from "../render/svg"
+import { selectMemeTemplate } from "./search"
+
+const memeDisplay = {
+  kind: "media-generation",
+  visibility: "media",
+  presentation: "artifact-only",
+  media: {
+    type: "image",
+    actionLabel: "创建表情包",
+    pendingTitle: "正在生成表情包",
+    pendingDescription: "正在挑选模板并排版文字...",
+    promptField: "prompt",
+    aspectRatio: "1:1",
+  },
+} as const
+
+const generateMemeArgs = {
+  prompt: tool.schema.string().min(1).max(600).describe("Natural-language meme request or caption idea."),
+  template: tool.schema
+    .string()
+    .min(1)
+    .optional()
+    .describe("Optional template id, for example drake, db, gb, astronaut."),
+  lines: tool.schema
+    .array(tool.schema.string().min(1).max(180))
+    .min(1)
+    .max(8)
+    .optional()
+    .describe("Text lines to render onto the template."),
+  style: tool.schema.string().optional().describe("Optional memegen style name when the template supports it."),
+  layout: tool.schema
+    .enum(["default", "top", "center"])
+    .optional()
+    .describe("Text placement strategy. Use default unless the user requests top-only or centered text."),
+  captionCase: tool.schema
+    .enum(["uppercase", "preserve"])
+    .optional()
+    .describe("Whether to uppercase meme text. Defaults to uppercase."),
+}
+
+type GenerateMemeArgs = z.infer<z.ZodObject<typeof generateMemeArgs>>
 
 type AssetInfo = {
   id: string
@@ -18,6 +60,38 @@ function attachmentPartId() {
   return `part_meme_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`
 }
 
+function cleanLine(value: string) {
+  return value.replace(/\s+/g, " ").trim().slice(0, 180)
+}
+
+function splitNearMiddle(value: string) {
+  const midpoint = Math.floor(value.length / 2)
+  const window = Math.max(16, Math.floor(value.length * 0.25))
+  const candidates = [...value.matchAll(/[\s,，;；:：。.!！?？-]/g)]
+    .map((match) => match.index ?? 0)
+    .filter((index) => index > 8 && index < value.length - 8)
+    .sort((a, b) => Math.abs(a - midpoint) - Math.abs(b - midpoint))
+
+  const splitAt = candidates.find((index) => Math.abs(index - midpoint) <= window)
+  if (!splitAt) return [value]
+  return [value.slice(0, splitAt), value.slice(splitAt + 1)]
+}
+
+function inferCaptionLines(prompt: string, maxLines: number) {
+  const clean = cleanLine(prompt)
+  if (!clean) return []
+  if (maxLines <= 1) return [clean]
+
+  const explicit = clean
+    .split(/\s*(?:\n|\/|\||;|；|,|，|。|!|！|\?|？)\s*/g)
+    .map(cleanLine)
+    .filter(Boolean)
+
+  if (explicit.length >= 2) return explicit.slice(0, maxLines)
+  if (clean.length > 48) return splitNearMiddle(clean).map(cleanLine).filter(Boolean).slice(0, maxLines)
+  return [clean]
+}
+
 function unwrapAssetInfo(result: unknown): AssetInfo {
   const data = (result as any)?.data ?? result
   if (!data || typeof data !== "object" || typeof (data as any).url !== "string") {
@@ -27,59 +101,75 @@ function unwrapAssetInfo(result: unknown): AssetInfo {
 }
 
 export function createGenerateMemeTool(input: PluginInput) {
-  return tool({
+  const definition = {
     description:
-      "Generate a meme image from a bundled template. Use search_meme_templates first when you need a template id.",
-    args: {
-      template: tool.schema.string().min(1).describe("Template id, for example drake, db, gb, astronaut."),
-      lines: tool.schema
-        .array(tool.schema.string().min(1).max(180))
-        .min(1)
-        .max(8)
-        .describe("Text lines to render onto the template."),
-      style: tool.schema.string().optional().describe("Optional memegen style name when the template supports it."),
-      layout: tool.schema
-        .enum(["default", "top", "center"])
-        .optional()
-        .describe("Text placement strategy. Use default unless the user requests top-only or centered text."),
-      captionCase: tool.schema
-        .enum(["uppercase", "preserve"])
-        .optional()
-        .describe("Whether to uppercase meme text. Defaults to uppercase."),
-    },
-    async execute(args, context): Promise<ToolResult> {
-      const templateId = args.template.trim().toLocaleLowerCase()
-      const template = templateById[templateId]
+      "Generate a meme image from a short natural-language prompt. Pick the template internally unless the user explicitly names one.",
+    display: memeDisplay,
+    args: generateMemeArgs,
+    async execute(args: GenerateMemeArgs, context: ToolContext): Promise<ToolResult> {
+      const requestedTemplate = args.template?.trim().toLocaleLowerCase()
+      const providedLines = (args.lines ?? []).map(cleanLine).filter(Boolean)
+      const requestedStyle = args.style?.trim()
+      const preferredLineCount = providedLines.length > 0 ? providedLines.length : 2
+      const template =
+        (requestedTemplate ? templateById[requestedTemplate] : undefined) ??
+        selectMemeTemplate({
+          query: args.prompt,
+          lineCount: preferredLineCount,
+          style: requestedStyle,
+        }) ??
+        selectMemeTemplate({
+          query: args.prompt,
+          style: requestedStyle,
+        })
+
       if (!template) {
         return {
-          title: "Unknown meme template",
-          output: `Unknown meme template "${args.template}". Run search_meme_templates to find a valid template id.`,
-          metadata: { template: args.template, error: "unknown_template" },
+          title: "No meme template found",
+          output: "No bundled meme template matched the request.",
+          metadata: {
+            prompt: args.prompt,
+            requestedTemplate,
+            error: "template_not_found",
+          },
         }
       }
 
-      const lines = args.lines.map((line) => line.trim()).filter(Boolean)
+      const lines = providedLines.length > 0 ? providedLines : inferCaptionLines(args.prompt, template.lines)
       if (lines.length === 0) {
         return {
           title: "Missing meme text",
-          output: "Provide at least one non-empty text line.",
-          metadata: { template: template.id, error: "missing_lines" },
+          output: "Provide a prompt or at least one non-empty text line.",
+          metadata: {
+            prompt: args.prompt,
+            template: template.id,
+            error: "missing_lines",
+          },
         }
       }
       if (lines.length > template.lines) {
         return {
           title: "Too many meme lines",
           output: `Template "${template.name}" (${template.id}) supports ${template.lines} line(s), but ${lines.length} were provided.`,
-          metadata: { template: template.id, supportedLines: template.lines, providedLines: lines.length },
+          metadata: {
+            prompt: args.prompt,
+            template: template.id,
+            supportedLines: template.lines,
+            providedLines: lines.length,
+          },
         }
       }
 
-      const requestedStyle = args.style?.trim()
       if (requestedStyle && !template.styles.includes(requestedStyle)) {
         return {
           title: "Unsupported meme style",
           output: `Template "${template.name}" does not support style "${requestedStyle}". Supported styles: ${template.styles.join(", ") || "default"}.`,
-          metadata: { template: template.id, style: requestedStyle, supportedStyles: template.styles },
+          metadata: {
+            prompt: args.prompt,
+            template: template.id,
+            style: requestedStyle,
+            supportedStyles: template.styles,
+          },
         }
       }
 
@@ -92,7 +182,9 @@ export function createGenerateMemeTool(input: PluginInput) {
       })
 
       const filename = `${safeName(template.id)}-${Date.now().toString(36)}.svg`
-      const file = new File([rendered.svg], filename, { type: "image/svg+xml" })
+      const file = new File([rendered.svg], filename, {
+        type: "image/svg+xml",
+      })
       const uploaded = unwrapAssetInfo(await input.client.asset.upload({ file } as any, { throwOnError: true } as any))
       const partId = attachmentPartId()
 
@@ -100,14 +192,16 @@ export function createGenerateMemeTool(input: PluginInput) {
         title: template.name,
         output: "",
         metadata: {
+          prompt: args.prompt,
           template: template.id,
           templateName: template.name,
+          requestedTemplate,
           lines,
           style: requestedStyle ?? "default",
           dimensions: { width: rendered.width, height: rendered.height },
           assetId: uploaded.id,
           display: {
-            presentation: "artifact-only",
+            ...memeDisplay,
             primaryAttachmentIds: [partId],
           },
         },
@@ -124,5 +218,7 @@ export function createGenerateMemeTool(input: PluginInput) {
         ],
       }
     },
-  })
+  }
+
+  return tool(definition)
 }

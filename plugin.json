@@ -1,6 +1,6 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "SII Holos",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
@@ -8,9 +8,9 @@
   "license": "MIT",
   "keywords": ["synergy-plugin", "meme", "image", "memegen"],
   "icon": "image",
-  "minSynergyVersion": "2.2.2",
+  "minSynergyVersion": "2.3.0",
   "engines": {
-    "synergy": ">=2.2.2",
+    "synergy": ">=2.3.0",
     "bun": ">=1.2.0"
   },
   "main": "./src/index.ts",
@@ -72,29 +72,25 @@
   "contributes": {
     "tools": [
       {
-        "name": "search_meme_templates",
-        "title": "Search Meme Templates",
-        "description": "Search bundled meme templates by id, name, keyword, style, or line count.",
-        "icon": "search",
-        "category": "media",
-        "kind": "read",
-        "capabilities": {
-          "filesystem": "none",
-          "network": false,
-          "shell": false,
-          "session": "none",
-          "workspace": "none",
-          "config": "none"
-        },
-        "risk": "low"
-      },
-      {
         "name": "generate_meme",
         "title": "Generate Meme",
-        "description": "Generate a meme SVG from a bundled template and text lines, then attach it as the primary visual result.",
+        "description": "Generate a meme SVG from a prompt, automatically choosing a bundled template and attaching the primary visual result.",
         "icon": "image",
         "category": "media",
         "kind": "generate",
+        "display": {
+          "kind": "media-generation",
+          "visibility": "media",
+          "presentation": "artifact-only",
+          "media": {
+            "type": "image",
+            "actionLabel": "创建表情包",
+            "pendingTitle": "正在生成表情包",
+            "pendingDescription": "正在挑选模板并排版文字...",
+            "promptField": "prompt",
+            "aspectRatio": "1:1"
+          }
+        },
         "capabilities": {
           "filesystem": "read",
           "network": false,
