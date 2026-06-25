@@ -5,20 +5,20 @@
     "": {
       "name": "synergy-meme-plugin",
       "dependencies": {
-        "@ericsanchezok/synergy-plugin": "^2.2.2",
+        "@ericsanchezok/synergy-plugin": "^2.3.0",
         "zod": "^4.0.0",
       },
       "devDependencies": {
-        "@ericsanchezok/synergy-plugin-kit": "^2.2.3",
+        "@ericsanchezok/synergy-plugin-kit": "^2.3.0",
         "@types/bun": "^1.3.14",
         "typescript": "^6.0.3",
       },
     },
   },
   "packages": {
-    "@ericsanchezok/synergy-plugin": ["@ericsanchezok/synergy-plugin@2.2.2", "", { "peerDependencies": { "zod": ">=4.0.0" } }, "sha512-tTMJ6/1i2hWXslF2eSvyBdltULo+aDBrmkshJjH0/9jRzcfWyc/fXkc5Tr/P/0wVPvWoH1QMGJHp95CJMm1NoQ=="],
+    "@ericsanchezok/synergy-plugin": ["@ericsanchezok/synergy-plugin@2.3.0", "", { "peerDependencies": { "zod": ">=4.0.0" } }, "sha512-ld/o6kXQ53lPTamwdw1+pHsuQPDr/9xcr5VhfoR3tytLw/s0yTtDkz2YMV7Gwt4sBHVAfSR2uihciQHFoOm3Ng=="],
 
-    "@ericsanchezok/synergy-plugin-kit": ["@ericsanchezok/synergy-plugin-kit@2.2.3", "", { "dependencies": { "@ericsanchezok/synergy-plugin": "2.2.2", "yargs": "18.0.0" }, "peerDependencies": { "zod": ">=4.0.0" }, "bin": { "synergy-plugin": "dist/cli.js", "synergy-plugin-kit": "dist/cli.js" } }, "sha512-/emMR4+CCzBYEDgaDDk/KsBuHqZpU8smafwNZmp8/ZYDoRoy2a5VM9LZvk32n6Pp63tb3zeqFtyZ/DBQcZZ6Gg=="],
+    "@ericsanchezok/synergy-plugin-kit": ["@ericsanchezok/synergy-plugin-kit@2.3.0", "", { "dependencies": { "@ericsanchezok/synergy-plugin": "2.3.0", "yargs": "18.0.0" }, "peerDependencies": { "zod": ">=4.0.0" }, "bin": { "synergy-plugin": "dist/cli.js", "synergy-plugin-kit": "dist/cli.js" } }, "sha512-riDxeU1k5AvBLHcOuqPMfBUBDYIclnhydPjSdAkJ1cOFCxx3AKf2yZRkqYgI49xnfUlUM1LMO4T4O9+qmVaFFQ=="],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 
