@@ -1,0 +1,110 @@
+{
+  "name": "synergy-meme-plugin",
+  "version": "0.1.0",
+  "description": "Generate meme images from bundled memegen.link templates.",
+  "author": "SII Holos",
+  "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
+  "repository": "https://github.com/EricSanchezok/synergy-meme-plugin",
+  "license": "MIT",
+  "keywords": ["synergy-plugin", "meme", "image", "memegen"],
+  "icon": "image",
+  "minSynergyVersion": "2.2.2",
+  "engines": {
+    "synergy": ">=2.2.2",
+    "bun": ">=1.2.0"
+  },
+  "main": "./src/index.ts",
+  "trust": {
+    "requestedTier": "declarative",
+    "reason": "The plugin contributes runtime tools only and does not load custom Web UI code."
+  },
+  "permissions": {
+    "tools": {
+      "invoke": true,
+      "filesystem": "read",
+      "network": false,
+      "shell": false,
+      "mcp": "none"
+    },
+    "data": {
+      "session": "none",
+      "workspace": "none",
+      "config": "plugin",
+      "secrets": "none"
+    },
+    "network": {
+      "connectDomains": [],
+      "resourceDomains": [],
+      "frameDomains": []
+    },
+    "ui": {
+      "toolRenderers": false,
+      "partRenderers": false,
+      "workspacePanels": false,
+      "globalPanels": false,
+      "settings": false,
+      "themes": false,
+      "icons": false,
+      "routes": false,
+      "trustedImport": false,
+      "sandboxIframe": false
+    },
+    "hooks": {
+      "events": "none",
+      "eventNames": [],
+      "toolExecute": "none",
+      "permissionAsk": "none",
+      "promptTransform": false,
+      "compactionTransform": false
+    }
+  },
+  "runtime": {
+    "mode": "process",
+    "minRuntimeApiVersion": "2.2.0",
+    "resources": {
+      "memoryMb": 128,
+      "startupTimeoutMs": 15000,
+      "requestTimeoutMs": 60000,
+      "maxConcurrentRequests": 4,
+      "maxLogBytesPerMinute": 131072
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "name": "search_meme_templates",
+        "title": "Search Meme Templates",
+        "description": "Search bundled meme templates by id, name, keyword, style, or line count.",
+        "icon": "search",
+        "category": "media",
+        "kind": "read",
+        "capabilities": {
+          "filesystem": "none",
+          "network": false,
+          "shell": false,
+          "session": "none",
+          "workspace": "none",
+          "config": "none"
+        },
+        "risk": "low"
+      },
+      {
+        "name": "generate_meme",
+        "title": "Generate Meme",
+        "description": "Generate a meme SVG from a bundled template and text lines, then attach it as the primary visual result.",
+        "icon": "image",
+        "category": "media",
+        "kind": "generate",
+        "capabilities": {
+          "filesystem": "read",
+          "network": false,
+          "shell": false,
+          "session": "none",
+          "workspace": "none",
+          "config": "none"
+        },
+        "risk": "medium"
+      }
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.synergy-plugin.tgz
+*.synergy-plugin.tgz.sig
+.DS_Store
+.cache/

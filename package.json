@@ -1,0 +1,29 @@
+{
+  "name": "synergy-meme-plugin",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "sync:templates": "bun run scripts/sync-templates.ts",
+    "verify:templates": "bun run scripts/verify-templates.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "dev": "synergy-plugin dev",
+    "validate:plugin": "synergy-plugin validate --runtime-discovery",
+    "build:plugin": "synergy-plugin build",
+    "pack:plugin": "synergy-plugin pack",
+    "sign:plugin": "synergy-plugin sign",
+    "entry:plugin": "synergy-plugin entry",
+    "publish:market": "synergy-plugin publish-market --repo https://github.com/EricSanchezok/synergy-meme-plugin",
+    "release:check": "bun run verify:templates && bun run typecheck && bun test && bun run validate:plugin && bun run build:plugin && bun run pack:plugin"
+  },
+  "dependencies": {
+    "@ericsanchezok/synergy-plugin": "^2.2.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@ericsanchezok/synergy-plugin-kit": "^2.2.3",
+    "@types/bun": "^1.3.14",
+    "typescript": "^6.0.3"
+  }
+}
