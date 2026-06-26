@@ -1,9 +1,14 @@
 import type { PluginInput } from "@ericsanchezok/synergy-plugin"
 import { tool, type ToolContext, type ToolResult } from "@ericsanchezok/synergy-plugin/tool"
-import type z from "zod"
+import z from "zod"
 import { templateById } from "../data/templates.generated"
 import { renderMemeSvg } from "../render/svg"
 import { selectMemeTemplate } from "./search"
+import { MemePlanJsonSchema, MemePlanSchema, type MemePlan } from "./plan"
+
+const PLUGIN_ID = "synergy-meme-plugin"
+const SEARCH_TOOL_ID = `plugin__${PLUGIN_ID}__search_meme_templates`
+const PICK_TOOL_ID = `plugin__${PLUGIN_ID}__pick_meme`
 
 const memeDisplay = {
   kind: "media-generation",
@@ -92,6 +97,79 @@ function inferCaptionLines(prompt: string, maxLines: number) {
   return [clean]
 }
 
+function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
+  const requestedTemplate = args.template?.trim().toLocaleLowerCase()
+  const providedLines = (args.lines ?? []).map(cleanLine).filter(Boolean)
+  const requestedStyle = args.style?.trim()
+  const preferredLineCount = providedLines.length > 0 ? providedLines.length : 2
+  const template =
+    (requestedTemplate ? templateById[requestedTemplate] : undefined) ??
+    selectMemeTemplate({
+      query: args.prompt,
+      lineCount: preferredLineCount,
+      style: requestedStyle,
+    }) ??
+    selectMemeTemplate({
+      query: args.prompt,
+      style: requestedStyle,
+    })
+
+  if (!template) return undefined
+  return {
+    template: template.id,
+    lines: providedLines.length > 0 ? providedLines : inferCaptionLines(args.prompt, template.lines),
+    ...(requestedStyle ? { style: requestedStyle } : {}),
+    layout: args.layout ?? "default",
+    captionCase: args.captionCase ?? "uppercase",
+  }
+}
+
+async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): Promise<MemePlan | undefined> {
+  const task = (context as any).task
+  if (!task?.run) return undefined
+  const constraints = [
+    args.template ? `Preferred template: ${args.template}` : undefined,
+    args.lines?.length ? `Requested lines: ${JSON.stringify(args.lines)}` : undefined,
+    args.style ? `Requested style: ${args.style}` : undefined,
+    args.layout ? `Requested layout: ${args.layout}` : undefined,
+    args.captionCase ? `Requested captionCase: ${args.captionCase}` : undefined,
+  ].filter(Boolean)
+  const result = await task.run({
+    subagent: "synergy-meme-planner",
+    description: "Plan meme",
+    prompt: [
+      "Choose a meme plan for the user's request.",
+      "",
+      `Request: ${args.prompt}`,
+      constraints.length ? `Constraints:\n${constraints.map((item) => `- ${item}`).join("\n")}` : "",
+      "",
+      "Use the available helper tools only:",
+      "- search_meme_templates to inspect candidate templates.",
+      "- pick_meme to validate and normalize a candidate plan before submitting the final structured result.",
+      "",
+      "Prefer a recognizable meme template that matches the requested emotion or contrast.",
+      "Submit the final result using the structured output contract.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    tools: {
+      "*": false,
+      [SEARCH_TOOL_ID]: true,
+      [PICK_TOOL_ID]: true,
+    },
+    visibility: "hidden",
+    timeoutMs: 30_000,
+    output: {
+      mode: "structured",
+      schema: MemePlanJsonSchema,
+      maxRepairTurns: 3,
+    },
+  })
+  if (result.status !== "completed") return undefined
+  const parsed = MemePlanSchema.safeParse(result.outputResult?.mode === "structured" ? result.outputResult.data : undefined)
+  return parsed.success ? parsed.data : undefined
+}
+
 function unwrapAssetInfo(result: unknown): AssetInfo {
   const data = (result as any)?.data ?? result
   if (!data || typeof data !== "object" || typeof (data as any).url !== "string") {
@@ -108,20 +186,10 @@ export function createGenerateMemeTool(input: PluginInput) {
     args: generateMemeArgs,
     async execute(args: GenerateMemeArgs, context: ToolContext): Promise<ToolResult> {
       const requestedTemplate = args.template?.trim().toLocaleLowerCase()
-      const providedLines = (args.lines ?? []).map(cleanLine).filter(Boolean)
       const requestedStyle = args.style?.trim()
-      const preferredLineCount = providedLines.length > 0 ? providedLines.length : 2
-      const template =
-        (requestedTemplate ? templateById[requestedTemplate] : undefined) ??
-        selectMemeTemplate({
-          query: args.prompt,
-          lineCount: preferredLineCount,
-          style: requestedStyle,
-        }) ??
-        selectMemeTemplate({
-          query: args.prompt,
-          style: requestedStyle,
-        })
+      const subagentPlan = await planWithSubagent(args, context).catch(() => undefined)
+      const plan = subagentPlan ?? deterministicPlan(args)
+      const template = plan ? templateById[plan.template] : undefined
 
       if (!template) {
         return {
@@ -135,7 +203,7 @@ export function createGenerateMemeTool(input: PluginInput) {
         }
       }
 
-      const lines = providedLines.length > 0 ? providedLines : inferCaptionLines(args.prompt, template.lines)
+      const lines = plan?.lines.map(cleanLine).filter(Boolean) ?? []
       if (lines.length === 0) {
         return {
           title: "Missing meme text",
@@ -160,14 +228,15 @@ export function createGenerateMemeTool(input: PluginInput) {
         }
       }
 
-      if (requestedStyle && !template.styles.includes(requestedStyle)) {
+      const effectiveStyle = plan?.style ?? requestedStyle
+      if (effectiveStyle && !template.styles.includes(effectiveStyle)) {
         return {
           title: "Unsupported meme style",
-          output: `Template "${template.name}" does not support style "${requestedStyle}". Supported styles: ${template.styles.join(", ") || "default"}.`,
+          output: `Template "${template.name}" does not support style "${effectiveStyle}". Supported styles: ${template.styles.join(", ") || "default"}.`,
           metadata: {
             prompt: args.prompt,
             template: template.id,
-            style: requestedStyle,
+            style: effectiveStyle,
             supportedStyles: template.styles,
           },
         }
@@ -177,8 +246,8 @@ export function createGenerateMemeTool(input: PluginInput) {
         pluginDir: input.pluginDir,
         template,
         lines,
-        layout: args.layout ?? "default",
-        captionCase: args.captionCase ?? "uppercase",
+        layout: plan?.layout ?? args.layout ?? "default",
+        captionCase: plan?.captionCase ?? args.captionCase ?? "uppercase",
       })
 
       const filename = `${safeName(template.id)}-${Date.now().toString(36)}.svg`
@@ -197,7 +266,8 @@ export function createGenerateMemeTool(input: PluginInput) {
           templateName: template.name,
           requestedTemplate,
           lines,
-          style: requestedStyle ?? "default",
+          planner: subagentPlan ? "subagent" : "fallback",
+          style: effectiveStyle ?? "default",
           dimensions: { width: rendered.width, height: rendered.height },
           assetId: uploaded.id,
           display: {

@@ -1,6 +1,6 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "SII Holos",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
@@ -8,9 +8,9 @@
   "license": "MIT",
   "keywords": ["synergy-plugin", "meme", "image", "memegen"],
   "icon": "image",
-  "minSynergyVersion": "2.3.0",
+  "minSynergyVersion": "2.4.0",
   "engines": {
-    "synergy": ">=2.3.0",
+    "synergy": ">=2.4.0",
     "bun": ">=1.2.0"
   },
   "main": "./src/index.ts",
@@ -24,7 +24,11 @@
       "filesystem": "read",
       "network": false,
       "shell": false,
-      "mcp": "none"
+      "mcp": "none",
+      "task": {
+        "agents": ["synergy-meme-planner"],
+        "maxRuntimeMs": 30000
+      }
     },
     "data": {
       "session": "none",
@@ -100,6 +104,55 @@
           "config": "none"
         },
         "risk": "medium"
+      },
+      {
+        "name": "search_meme_templates",
+        "title": "Search Meme Templates",
+        "description": "Internal helper used by the meme planner to search bundled templates.",
+        "icon": "search",
+        "category": "media",
+        "kind": "search",
+        "exposure": { "mode": "internal" },
+        "capabilities": {
+          "filesystem": "none",
+          "network": false,
+          "shell": false,
+          "session": "none",
+          "workspace": "none",
+          "config": "none"
+        },
+        "risk": "low"
+      },
+      {
+        "name": "pick_meme",
+        "title": "Pick Meme",
+        "description": "Internal helper used by the meme planner to validate the final meme plan.",
+        "icon": "check",
+        "category": "media",
+        "kind": "plan",
+        "exposure": { "mode": "internal" },
+        "capabilities": {
+          "filesystem": "none",
+          "network": false,
+          "shell": false,
+          "session": "none",
+          "workspace": "none",
+          "config": "none"
+        },
+        "risk": "low"
+      }
+    ],
+    "agents": [
+      {
+        "name": "synergy-meme-planner",
+        "description": "Hidden planner that selects a meme template and caption plan using internal helper tools.",
+        "mode": "subagent",
+        "hidden": true,
+        "permission": {
+          "*": "deny",
+          "plugin__synergy-meme-plugin__search_meme_templates": "allow",
+          "plugin__synergy-meme-plugin__pick_meme": "allow"
+        }
       }
     ]
   }

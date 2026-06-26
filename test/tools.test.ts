@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import path from "node:path"
 import { plugin } from "../src"
 import { createGenerateMemeTool } from "../src/tools/generate"
+import { pickMeme } from "../src/tools/plan"
 import { findMemeTemplates } from "../src/tools/search"
 
 const pluginDir = path.resolve(import.meta.dir, "..")
@@ -42,9 +43,30 @@ describe("internal template search", () => {
 })
 
 describe("plugin descriptor", () => {
-  test("exposes only generate_meme", async () => {
+  test("exposes generate_meme publicly and internal planner helpers", async () => {
     const hooks = await plugin.init(fakeInput())
-    expect(Object.keys(hooks.tool ?? {})).toEqual(["generate_meme"])
+    expect(Object.keys(hooks.tool ?? {}).sort()).toEqual(["generate_meme", "pick_meme", "search_meme_templates"])
+    expect((hooks.tool?.search_meme_templates as any).exposure).toEqual({ mode: "internal" })
+    expect((hooks.tool?.pick_meme as any).exposure).toEqual({ mode: "internal" })
+    expect(hooks.agents?.["synergy-meme-planner"]?.hidden).toBe(true)
+  })
+})
+
+describe("planner helpers", () => {
+  test("pick_meme validates and returns a normalized plan", async () => {
+    const result = (await pickMeme.execute(
+      {
+        template: "drake",
+        lines: ["old plugin flow", "new planner flow"],
+      },
+      context,
+    )) as any
+    expect(JSON.parse(result.output)).toMatchObject({
+      template: "drake",
+      lines: ["old plugin flow", "new planner flow"],
+      layout: "default",
+      captionCase: "uppercase",
+    })
   })
 })
 
@@ -95,6 +117,54 @@ describe("generate_meme", () => {
     expect(result.attachments).toHaveLength(1)
     expect(result.attachments[0].url).toBe("asset://asset-test")
     expect(result.metadata.display.primaryAttachmentIds).toEqual([result.attachments[0].id])
+  })
+
+  test("uses hidden planner task when host task service is available", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const calls: Array<any> = []
+    const result = (await tool.execute(
+      {
+        prompt: "legacy scattered tools vs one polished meme tool",
+      },
+      {
+        ...context,
+        task: {
+          run: async (input: any) => {
+            calls.push(input)
+            return {
+              taskId: "cortex-test",
+              sessionId: "session-child",
+              status: "completed",
+              output: "trajectory summary",
+              outputResult: {
+                mode: "structured",
+                status: "valid",
+                source: "structured_tool",
+                data: {
+                  template: "drake",
+                  lines: ["scattered tools", "one polished tool"],
+                  layout: "default",
+                  captionCase: "uppercase",
+                },
+                repairTurns: 0,
+              },
+            }
+          },
+        },
+      } as any,
+    )) as any
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0].subagent).toBe("synergy-meme-planner")
+    expect(calls[0].visibility).toBe("hidden")
+    expect(calls[0].tools["*"]).toBe(false)
+    expect(calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"]).toBe(true)
+    expect(calls[0].tools["plugin__synergy-meme-plugin__pick_meme"]).toBe(true)
+    expect(calls[0].output.mode).toBe("structured")
+    expect(calls[0].output.maxRepairTurns).toBe(3)
+    expect(result.metadata.planner).toBe("subagent")
+    expect(uploads[0].text).toContain("SCATTERED TOOLS")
   })
 
   test("generates from prompt only", async () => {

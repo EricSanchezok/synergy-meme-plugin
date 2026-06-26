@@ -71,6 +71,7 @@ export function selectMemeTemplate(input: Omit<MemeTemplateSearchInput, "limit">
 
 export const searchMemeTemplates = tool({
   description: "Search bundled meme templates by id, name, keyword, style, or line count.",
+  exposure: { mode: "internal" } as any,
   args: {
     query: tool.schema.string().optional().describe("Search text, for example drake, distracted, brain, choice."),
     limit: tool.schema.number().int().min(1).max(50).optional().describe("Maximum number of templates to return."),
