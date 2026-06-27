@@ -1,16 +1,16 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "SII Holos",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "repository": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "license": "MIT",
   "keywords": ["synergy-plugin", "meme", "image", "memegen"],
-  "icon": "image",
-  "minSynergyVersion": "2.4.0",
+  "icon": "icons/market.svg",
+  "minSynergyVersion": "2.4.1",
   "engines": {
-    "synergy": ">=2.4.0",
+    "synergy": ">=2.4.1",
     "bun": ">=1.2.0"
   },
   "main": "./src/index.ts",
