@@ -1,6 +1,6 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "SII Holos",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
