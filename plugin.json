@@ -1,6 +1,6 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "EricSanchez",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
@@ -27,7 +27,7 @@
       "mcp": "none",
       "task": {
         "agents": ["synergy-meme-planner"],
-        "maxRuntimeMs": 30000
+        "maxRuntimeMs": 120000
       }
     },
     "data": {
@@ -68,7 +68,7 @@
     "resources": {
       "memoryMb": 128,
       "startupTimeoutMs": 15000,
-      "requestTimeoutMs": 60000,
+      "requestTimeoutMs": 120000,
       "maxConcurrentRequests": 4,
       "maxLogBytesPerMinute": 131072
     }
@@ -88,10 +88,6 @@
           "presentation": "artifact-only",
           "media": {
             "type": "image",
-            "actionLabel": "创建表情包",
-            "pendingTitle": "正在生成表情包",
-            "pendingDescription": "正在挑选模板并排版文字...",
-            "promptField": "prompt",
             "aspectRatio": "1:1"
           }
         },

@@ -16,13 +16,11 @@ const memeDisplay = {
   presentation: "artifact-only",
   media: {
     type: "image",
-    actionLabel: "创建表情包",
-    pendingTitle: "正在生成表情包",
-    pendingDescription: "正在挑选模板并排版文字...",
-    promptField: "prompt",
     aspectRatio: "1:1",
   },
 } as const
+
+const PLANNER_TIMEOUT_MS = 120_000
 
 const generateMemeArgs = {
   prompt: tool.schema.string().min(1).max(600).describe("Natural-language meme request or caption idea."),
@@ -158,7 +156,7 @@ async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): P
       [PICK_TOOL_ID]: true,
     },
     visibility: "hidden",
-    timeoutMs: 30_000,
+    timeoutMs: PLANNER_TIMEOUT_MS,
     output: {
       mode: "structured",
       schema: MemePlanJsonSchema,

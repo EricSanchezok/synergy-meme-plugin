@@ -40,6 +40,24 @@ describe("internal template search", () => {
     const result = findMemeTemplates({ query: "drake", limit: 5 })
     expect(result.some((item) => item.id === "drake")).toBe(true)
   })
+
+  test("expands Chinese developer debugging prompts into useful candidates", async () => {
+    const result = findMemeTemplates({
+      query: "程序员debug半天发现是少了个分号，崩溃又释然的表情包",
+      limit: 8,
+    })
+    const ids = result.map((item) => item.id)
+    expect(ids.length).toBeGreaterThanOrEqual(5)
+    expect(ids).toContain("scc")
+    expect(ids).toContain("facepalm")
+    expect(ids).not.toContain("cbb")
+  })
+
+  test("returns a diverse classic set for random prompts", async () => {
+    const ids = findMemeTemplates({ query: "随便生成一个", limit: 8 }).map((item) => item.id)
+    expect(ids.length).toBeGreaterThanOrEqual(5)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
 })
 
 describe("plugin descriptor", () => {
@@ -114,6 +132,7 @@ describe("generate_meme", () => {
     expect(result.metadata.display.kind).toBe("media-generation")
     expect(result.metadata.display.visibility).toBe("media")
     expect(result.metadata.display.presentation).toBe("artifact-only")
+    expect(result.metadata.display.media).toEqual({ type: "image", aspectRatio: "1:1" })
     expect(result.attachments).toHaveLength(1)
     expect(result.attachments[0].url).toBe("asset://asset-test")
     expect(result.metadata.display.primaryAttachmentIds).toEqual([result.attachments[0].id])
@@ -158,6 +177,7 @@ describe("generate_meme", () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].subagent).toBe("synergy-meme-planner")
     expect(calls[0].visibility).toBe("hidden")
+    expect(calls[0].timeoutMs).toBe(120_000)
     expect(calls[0].tools["*"]).toBe(false)
     expect(calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"]).toBe(true)
     expect(calls[0].tools["plugin__synergy-meme-plugin__pick_meme"]).toBe(true)
