@@ -20,7 +20,7 @@
   },
   "permissions": {
     "tools": {
-      "filesystem": "read",
+      "filesystem": "none",
       "network": false,
       "shell": false,
       "mcp": "none",
@@ -67,7 +67,7 @@
     "resources": {
       "memoryMb": 128,
       "startupTimeoutMs": 15000,
-      "requestTimeoutMs": 120000,
+      "requestTimeoutMs": 150000,
       "maxConcurrentRequests": 4,
       "maxLogBytesPerMinute": 131072
     }
@@ -91,7 +91,7 @@
           }
         },
         "capabilities": {
-          "filesystem": "read",
+          "filesystem": "none",
           "network": false,
           "shell": false,
           "session": "none",

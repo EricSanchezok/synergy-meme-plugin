@@ -1,14 +1,11 @@
 import type { PluginInput } from "@ericsanchezok/synergy-plugin"
 import { tool, type ToolContext, type ToolResult } from "@ericsanchezok/synergy-plugin/tool"
 import z from "zod"
+import { PICK_TOOL_ID, PLANNER_SUBAGENT_ID, PLANNER_TIMEOUT_MS, SEARCH_TOOL_ID } from "../constants"
 import { templateById } from "../data/templates.generated"
 import { renderMemeSvg } from "../render/svg"
 import { selectMemeTemplate } from "./search"
 import { MemePlanJsonSchema, MemePlanSchema, type MemePlan } from "./plan"
-
-const PLUGIN_ID = "synergy-meme-plugin"
-const SEARCH_TOOL_ID = `plugin__${PLUGIN_ID}__search_meme_templates`
-const PICK_TOOL_ID = `plugin__${PLUGIN_ID}__pick_meme`
 
 const memeDisplay = {
   kind: "media-generation",
@@ -19,8 +16,6 @@ const memeDisplay = {
     aspectRatio: "1:1",
   },
 } as const
-
-const PLANNER_TIMEOUT_MS = 120_000
 
 const generateMemeArgs = {
   prompt: tool.schema.string().min(1).max(600).describe("Natural-language meme request or caption idea."),
@@ -133,7 +128,7 @@ async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): P
     args.captionCase ? `Requested captionCase: ${args.captionCase}` : undefined,
   ].filter(Boolean)
   const result = await task.run({
-    subagent: "synergy-meme-planner",
+    subagent: PLANNER_SUBAGENT_ID,
     description: "Plan meme",
     prompt: [
       "Choose a meme plan for the user's request.",

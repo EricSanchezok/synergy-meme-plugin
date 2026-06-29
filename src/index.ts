@@ -1,11 +1,15 @@
 import type { PluginDescriptor, PluginHooks, PluginInput } from "@ericsanchezok/synergy-plugin"
+import {
+  PICK_TOOL_ID,
+  PICK_TOOL_NAME,
+  PLANNER_SUBAGENT_ID,
+  PLUGIN_ID,
+  SEARCH_TOOL_ID,
+  SEARCH_TOOL_NAME,
+} from "./constants"
 import { createGenerateMemeTool } from "./tools/generate"
 import { pickMeme } from "./tools/plan"
 import { searchMemeTemplates } from "./tools/search"
-
-const PLUGIN_ID = "synergy-meme-plugin"
-const SEARCH_TOOL_ID = `plugin__${PLUGIN_ID}__search_meme_templates`
-const PICK_TOOL_ID = `plugin__${PLUGIN_ID}__pick_meme`
 
 export const plugin: PluginDescriptor = {
   id: PLUGIN_ID,
@@ -13,8 +17,8 @@ export const plugin: PluginDescriptor = {
   async init(input: PluginInput): Promise<PluginHooks> {
     return {
       agents: {
-        "synergy-meme-planner": {
-          name: "synergy-meme-planner",
+        [PLANNER_SUBAGENT_ID]: {
+          name: PLANNER_SUBAGENT_ID,
           description:
             "Hidden planner for Synergy Meme Plugin. Selects a meme template and caption plan using internal meme helper tools.",
           mode: "subagent",
@@ -39,8 +43,8 @@ export const plugin: PluginDescriptor = {
       },
       tool: {
         generate_meme: createGenerateMemeTool(input),
-        search_meme_templates: searchMemeTemplates,
-        pick_meme: pickMeme,
+        [SEARCH_TOOL_NAME]: searchMemeTemplates,
+        [PICK_TOOL_NAME]: pickMeme,
       },
     }
   },
