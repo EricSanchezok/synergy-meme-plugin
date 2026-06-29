@@ -20,15 +20,25 @@ function asciiTokens(value: string) {
 
 const queryExpansions: Array<{ match: RegExp; tokens: string[] }> = [
   {
-    match: /程序员|开发|代码|编程|软件|工程师|debug|调试|bug|错误|报错|分号|semicolon|programmer|developer|coding|code/i,
-    tokens: ["developer", "programming", "code", "debug", "bug", "mistake", "confused"],
+    match:
+      /程序员|开发|代码|编程|软件|工程师|debug|调试|bug|错误|报错|分号|semicolon|programmer|developer|coding|code/i,
+    tokens: [
+      "developer",
+      "programming",
+      "code",
+      "debug",
+      "bug",
+      "mistake",
+      "confused",
+    ],
   },
   {
     match: /崩溃|爆炸|抓狂|绝望|破防|裂开|panic|crash|breakdown|rage|stress/i,
     tokens: ["panic", "stress", "pain", "frustrated", "disaster", "fire"],
   },
   {
-    match: /释然|解决|修好|终于|原来|恍然大悟|成功|爽|win|success|fixed|finally|relief/i,
+    match:
+      /释然|解决|修好|终于|原来|恍然大悟|成功|爽|win|success|fixed|finally|relief/i,
     tokens: ["success", "relief", "finally", "realization", "happy", "good"],
   },
   {
@@ -36,8 +46,35 @@ const queryExpansions: Array<{ match: RegExp; tokens: string[] }> = [
     tokens: ["confused", "lost", "unsure", "question", "what"],
   },
   {
+    match: /懂|明白|理解|看懂|没完全|似懂非懂|原来如此|i see|understand/i,
+    tokens: ["realization", "confused", "awkward", "question", "clarity"],
+  },
+  {
     match: /选择|对比|相比|以前|现在|旧|新|vs|versus|choice|prefer/i,
     tokens: ["choice", "contrast", "old", "new", "prefer"],
+  },
+  {
+    match:
+      /老板|经理|产品|需求|客户|甲方|改了|改需求|变更|scope|requirement|product|manager|client/i,
+    tokens: ["work", "product", "change", "backfire", "stress", "mistake"],
+  },
+  {
+    match:
+      /简单|很快|五分钟|一天|三天|半天|以为|实际|easy|simple|quick|expectation|reality/i,
+    tokens: ["expectation", "reality", "underestimate", "pain", "work"],
+  },
+  {
+    match:
+      /上线|部署|生产|线上|监控|告警|报警|全红|ci|build|deploy|production|monitor|alert/i,
+    tokens: [
+      "deploy",
+      "production",
+      "failure",
+      "disaster",
+      "fire",
+      "panic",
+      "debug",
+    ],
   },
   {
     match: /脑洞|升级|越来越|复杂|架构|plan|brain|smart|clever|complex/i,
@@ -60,18 +97,37 @@ const queryExpansions: Array<{ match: RegExp; tokens: string[] }> = [
 const templateSemantics: Record<string, string[]> = {
   astronaut: ["realization", "reveal", "always", "truth", "debug"],
   awkward: ["awkward", "mistake", "social", "pain"],
+  badchoice: ["choice", "mistake", "regret", "consequence"],
   crazypills: ["panic", "frustrated", "confused", "rage"],
   cryingfloor: ["cry", "pain", "failure", "dramatic"],
   db: ["choice", "contrast", "distracted", "temptation"],
+  dbg: ["choice", "contrast", "distracted", "temptation"],
   disastergirl: ["disaster", "fire", "chaos", "success"],
   doge: ["dog", "weird", "confused", "classic"],
   drake: ["choice", "contrast", "old", "new", "prefer", "classic"],
   drowning: ["ignored", "problem", "help", "priority"],
   dwight: ["office", "work", "fact", "deadpan"],
   ermg: ["panic", "excited", "surprised", "error"],
-  facepalm: ["developer", "debug", "bug", "mistake", "semicolon", "frustrated", "obvious"],
+  facepalm: [
+    "developer",
+    "debug",
+    "bug",
+    "mistake",
+    "semicolon",
+    "frustrated",
+    "obvious",
+  ],
   feelsgood: ["success", "relief", "happy", "good"],
-  fine: ["panic", "stress", "fire", "disaster", "pretend", "developer", "debug", "classic"],
+  fine: [
+    "panic",
+    "stress",
+    "fire",
+    "disaster",
+    "pretend",
+    "developer",
+    "debug",
+    "classic",
+  ],
   firsttry: ["success", "lucky", "unexpected", "win"],
   fry: ["confused", "unsure", "debug", "bug", "question"],
   gandalf: ["confused", "lost", "question"],
@@ -86,7 +142,16 @@ const templateSemantics: Record<string, string[]> = {
   noidea: ["dog", "confused", "developer", "lost", "debug", "code"],
   rollsafe: ["clever", "hack", "idea", "smart"],
   sadfrog: ["sad", "pain", "failure"],
-  scc: ["realization", "clarity", "finally", "debug", "bug", "semicolon", "relief"],
+  scc: [
+    "realization",
+    "clarity",
+    "finally",
+    "debug",
+    "bug",
+    "semicolon",
+    "relief",
+  ],
+  sf: ["success", "relief", "fixed", "win"],
   spongebob: ["mocking", "sarcasm", "silly"],
   stonks: ["success", "money", "win", "absurd"],
   success: ["success", "relief", "finally", "fixed", "win", "classic"],
@@ -101,13 +166,11 @@ const classicTemplateIds = [
   "success",
   "gb",
   "rollsafe",
-  "noidea",
   "fry",
   "harold",
   "disastergirl",
   "scc",
   "astronaut",
-  "doge",
   "awkward",
   "gru",
 ]
@@ -163,11 +226,55 @@ function templateBoost(template: MemeTemplate, tokens: string[]) {
   for (const token of tokens) {
     if (semantics.has(token)) score += 14
   }
-  if (tokens.includes("classic") && classicTemplateIds.includes(template.id)) score += 10
-  if (tokens.includes("developer") && ["facepalm", "fry", "noidea", "scc", "fine", "harold"].includes(template.id)) {
+  if (tokens.includes("classic") && classicTemplateIds.includes(template.id))
+    score += 10
+  if (
+    tokens.includes("developer") &&
+    ["facepalm", "fry", "noidea", "scc", "fine", "harold"].includes(template.id)
+  ) {
     score += 16
   }
-  if (tokens.includes("semicolon") && ["facepalm", "scc", "success", "fry"].includes(template.id)) score += 18
+  if (
+    tokens.includes("semicolon") &&
+    ["facepalm", "scc", "success", "fry"].includes(template.id)
+  )
+    score += 18
+  if (
+    tokens.includes("change") &&
+    ["gru", "facepalm", "badchoice", "fine", "harold", "crazypills"].includes(
+      template.id,
+    )
+  ) {
+    score += 18
+  }
+  if (
+    (tokens.includes("deploy") ||
+      tokens.includes("production") ||
+      tokens.includes("monitor")) &&
+    [
+      "disastergirl",
+      "fine",
+      "facepalm",
+      "crazypills",
+      "scc",
+      "success",
+    ].includes(template.id)
+  ) {
+    score += 18
+  }
+  if (
+    tokens.includes("expectation") &&
+    ["drake", "db", "gru", "badchoice", "fine", "harold"].includes(template.id)
+  ) {
+    score += 16
+  }
+  if (
+    tokens.includes("realization") &&
+    tokens.includes("confused") &&
+    ["scc", "fry", "astronaut", "facepalm", "gb"].includes(template.id)
+  ) {
+    score += 14
+  }
   if (
     tokens.includes("panic") &&
     tokens.includes("relief") &&
@@ -181,7 +288,8 @@ function templateBoost(template: MemeTemplate, tokens: string[]) {
 function lineFitScore(template: MemeTemplate, lineCount?: number) {
   if (!lineCount) return 0
   if (template.lines === lineCount) return 18
-  if (template.lines > lineCount) return Math.max(4, 12 - (template.lines - lineCount) * 2)
+  if (template.lines > lineCount)
+    return Math.max(4, 12 - (template.lines - lineCount) * 2)
   return -Math.min(12, (lineCount - template.lines) * 4)
 }
 
@@ -189,9 +297,13 @@ export function scoreTemplate(template: MemeTemplate, query: string) {
   const q = normalize(query)
   if (!q) return classicTemplateIds.includes(template.id) ? 2 : 1
   const tokens = queryTokens(query)
-  const fields = [template.id, template.name, ...template.keywords, ...template.styles, template.source ?? ""].map(
-    normalize,
-  )
+  const fields = [
+    template.id,
+    template.name,
+    ...template.keywords,
+    ...template.styles,
+    template.source ?? "",
+  ].map(normalize)
   const candidateTokens = templateTokens(template)
 
   let score = 0
@@ -218,11 +330,17 @@ export function findMemeTemplates(input: MemeTemplateSearchInput) {
   const limit = input.limit ?? 12
   const style = input.style ? normalize(input.style) : undefined
   return templates
-    .filter((template) => (input.minLines ? template.lines >= input.minLines : true))
-    .filter((template) => (style ? template.styles.map(normalize).includes(style) : true))
+    .filter((template) =>
+      input.minLines ? template.lines >= input.minLines : true,
+    )
+    .filter((template) =>
+      style ? template.styles.map(normalize).includes(style) : true,
+    )
     .map((template) => ({
       template,
-      score: scoreTemplate(template, input.query ?? "") + lineFitScore(template, input.lineCount),
+      score:
+        scoreTemplate(template, input.query ?? "") +
+        lineFitScore(template, input.lineCount),
     }))
     .filter((entry) => !input.query || entry.score > 0)
     .sort(
@@ -235,42 +353,69 @@ export function findMemeTemplates(input: MemeTemplateSearchInput) {
     .map(({ template }) => template)
 }
 
-export function selectMemeTemplate(input: Omit<MemeTemplateSearchInput, "limit">): MemeTemplate | undefined {
+export function selectMemeTemplate(
+  input: Omit<MemeTemplateSearchInput, "limit">,
+): MemeTemplate | undefined {
   const [match] = findMemeTemplates({ ...input, limit: 1 })
   if (match) return match
 
   const fallback = [...classicTemplateIds].sort(
-    (a, b) => hashScore(`${input.query ?? ""}:${b}`) - hashScore(`${input.query ?? ""}:${a}`),
+    (a, b) =>
+      hashScore(`${input.query ?? ""}:${b}`) -
+      hashScore(`${input.query ?? ""}:${a}`),
   )
   for (const id of fallback) {
     const template = templates.find((item) => item.id === id)
     if (!template) continue
     if (input.minLines && template.lines < input.minLines) continue
-    if (input.style && !template.styles.map(normalize).includes(normalize(input.style))) continue
+    if (
+      input.style &&
+      !template.styles.map(normalize).includes(normalize(input.style))
+    )
+      continue
     return template
   }
 
   return templates.find((template) => {
     if (input.minLines && template.lines < input.minLines) return false
-    if (input.style && !template.styles.map(normalize).includes(normalize(input.style))) return false
+    if (
+      input.style &&
+      !template.styles.map(normalize).includes(normalize(input.style))
+    )
+      return false
     return true
   })
 }
 
 export const searchMemeTemplates = tool({
-  description: "Search bundled meme templates by id, name, keyword, style, or line count.",
+  description:
+    "Search bundled meme templates by id, name, keyword, style, or line count.",
   exposure: { mode: "internal" } as any,
   args: {
-    query: tool.schema.string().optional().describe("Search text, for example drake, distracted, brain, choice."),
-    limit: tool.schema.number().int().min(1).max(50).optional().describe("Maximum number of templates to return."),
-      lineCount: tool.schema
-        .number()
-        .int()
-        .min(1)
-        .max(8)
-        .optional()
-        .describe("Prefer templates supporting this number of caption lines. Results may include nearby fits."),
-    style: tool.schema.string().optional().describe("Only return templates supporting this style."),
+    query: tool.schema
+      .string()
+      .optional()
+      .describe("Search text, for example drake, distracted, brain, choice."),
+    limit: tool.schema
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .optional()
+      .describe("Maximum number of templates to return."),
+    lineCount: tool.schema
+      .number()
+      .int()
+      .min(1)
+      .max(8)
+      .optional()
+      .describe(
+        "Prefer templates supporting this number of caption lines. Results may include nearby fits.",
+      ),
+    style: tool.schema
+      .string()
+      .optional()
+      .describe("Only return templates supporting this style."),
   },
   async execute(args) {
     const matches = findMemeTemplates(args).map((template) => ({
@@ -278,7 +423,12 @@ export const searchMemeTemplates = tool({
       name: template.name,
       lines: template.lines,
       styles: template.styles,
-      keywords: [...new Set([...(templateSemantics[template.id] ?? []), ...template.keywords])].slice(0, 10),
+      keywords: [
+        ...new Set([
+          ...(templateSemantics[template.id] ?? []),
+          ...template.keywords,
+        ]),
+      ].slice(0, 10),
       fit: args.lineCount
         ? template.lines === args.lineCount
           ? "exact"

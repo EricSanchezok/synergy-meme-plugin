@@ -54,16 +54,64 @@ describe("internal template search", () => {
   })
 
   test("returns a diverse classic set for random prompts", async () => {
-    const ids = findMemeTemplates({ query: "随便生成一个", limit: 8 }).map((item) => item.id)
+    const ids = findMemeTemplates({ query: "随便生成一个", limit: 8 }).map(
+      (item) => item.id,
+    )
     expect(ids.length).toBeGreaterThanOrEqual(5)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
   test("does not return empty results for Chinese prompts without known keywords", async () => {
-    const ids = findMemeTemplates({ query: "完全没有英文关键词的奇怪中文需求", lineCount: 1, limit: 5 }).map(
-      (item) => item.id,
-    )
+    const ids = findMemeTemplates({
+      query: "完全没有英文关键词的奇怪中文需求",
+      lineCount: 1,
+      limit: 5,
+    }).map((item) => item.id)
     expect(ids.length).toBeGreaterThanOrEqual(3)
+  })
+
+  test("prioritizes product and deployment work scenarios over generic defaults", async () => {
+    const productIds = findMemeTemplates({
+      query: "产品需求又改了",
+      limit: 6,
+    }).map((item) => item.id)
+    expect(productIds.slice(0, 4)).toEqual(
+      expect.arrayContaining(["gru", "fine", "badchoice", "facepalm"]),
+    )
+    expect(productIds[0]).not.toBe("doge")
+    expect(productIds[0]).not.toBe("noidea")
+
+    const deployIds = findMemeTemplates({
+      query: "CI 过了但线上挂了",
+      limit: 6,
+    }).map((item) => item.id)
+    expect(deployIds.slice(0, 4)).toEqual(
+      expect.arrayContaining([
+        "fine",
+        "disastergirl",
+        "crazypills",
+        "facepalm",
+      ]),
+    )
+    expect(deployIds[0]).not.toBe("doge")
+  })
+
+  test("understands partial-understanding and underestimated-work prompts", async () => {
+    const understandingIds = findMemeTemplates({
+      query: "做一个我懂了但没完全懂的表情包",
+      limit: 6,
+    }).map((item) => item.id)
+    expect(understandingIds.slice(0, 4)).toEqual(
+      expect.arrayContaining(["scc", "fry", "astronaut"]),
+    )
+
+    const workIds = findMemeTemplates({
+      query: "老板说很简单实际搞了三天",
+      limit: 6,
+    }).map((item) => item.id)
+    expect(workIds.slice(0, 4)).toEqual(
+      expect.arrayContaining(["gru", "badchoice", "fine", "harold"]),
+    )
   })
 
   test("treats line count as a preference for planner search", async () => {
@@ -80,9 +128,17 @@ describe("internal template search", () => {
 describe("plugin descriptor", () => {
   test("exposes generate_meme publicly and internal planner helpers", async () => {
     const hooks = await plugin.init(fakeInput())
-    expect(Object.keys(hooks.tool ?? {}).sort()).toEqual(["generate_meme", "pick_meme", "search_meme_templates"])
-    expect((hooks.tool?.search_meme_templates as any).exposure).toEqual({ mode: "internal" })
-    expect((hooks.tool?.pick_meme as any).exposure).toEqual({ mode: "internal" })
+    expect(Object.keys(hooks.tool ?? {}).sort()).toEqual([
+      "generate_meme",
+      "pick_meme",
+      "search_meme_templates",
+    ])
+    expect((hooks.tool?.search_meme_templates as any).exposure).toEqual({
+      mode: "internal",
+    })
+    expect((hooks.tool?.pick_meme as any).exposure).toEqual({
+      mode: "internal",
+    })
     expect(hooks.agents?.["synergy-meme-planner"]?.hidden).toBe(true)
   })
 })
@@ -124,7 +180,10 @@ describe("generate_meme", () => {
 
   test("rejects too many lines", async () => {
     const tool = createGenerateMemeTool(fakeInput())
-    const result = await tool.execute({ prompt: "too many lines", template: "drake", lines: ["a", "b", "c"] }, context)
+    const result = await tool.execute(
+      { prompt: "too many lines", template: "drake", lines: ["a", "b", "c"] },
+      context,
+    )
     expect((result as any).title).toBe("Too many meme lines")
     expect((result as any).attachments).toBeUndefined()
   })
@@ -164,10 +223,15 @@ describe("generate_meme", () => {
     expect(result.metadata.display.kind).toBe("media-generation")
     expect(result.metadata.display.visibility).toBe("media")
     expect(result.metadata.display.presentation).toBe("artifact-only")
-    expect(result.metadata.display.media).toEqual({ type: "image", aspectRatio: "1:1" })
+    expect(result.metadata.display.media).toEqual({
+      type: "image",
+      aspectRatio: "1:1",
+    })
     expect(result.attachments).toHaveLength(1)
     expect(result.attachments[0].url).toBe("asset://asset-test")
-    expect(result.metadata.display.primaryAttachmentIds).toEqual([result.attachments[0].id])
+    expect(result.metadata.display.primaryAttachmentIds).toEqual([
+      result.attachments[0].id,
+    ])
   })
 
   test("uses hidden planner task when host task service is available", async () => {
@@ -211,7 +275,9 @@ describe("generate_meme", () => {
     expect(calls[0].visibility).toBe("hidden")
     expect(calls[0].timeoutMs).toBe(120_000)
     expect(calls[0].tools["*"]).toBe(false)
-    expect(calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"]).toBe(true)
+    expect(
+      calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"],
+    ).toBe(true)
     expect(calls[0].tools["plugin__synergy-meme-plugin__pick_meme"]).toBe(true)
     expect(calls[0].output.mode).toBe("structured")
     expect(calls[0].output.maxRepairTurns).toBe(3)
@@ -222,7 +288,10 @@ describe("generate_meme", () => {
   test("generates from prompt only", async () => {
     const uploads: Array<{ file: File; text: string }> = []
     const tool = createGenerateMemeTool(fakeInput(uploads))
-    const result = (await tool.execute({ prompt: "shipping a plugin market with one command" }, context)) as any
+    const result = (await tool.execute(
+      { prompt: "shipping a plugin market with one command" },
+      context,
+    )) as any
 
     expect(result.attachments).toHaveLength(1)
     expect(typeof result.metadata.template).toBe("string")
