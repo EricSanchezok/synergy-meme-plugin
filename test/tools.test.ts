@@ -58,6 +58,23 @@ describe("internal template search", () => {
     expect(ids.length).toBeGreaterThanOrEqual(5)
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  test("does not return empty results for Chinese prompts without known keywords", async () => {
+    const ids = findMemeTemplates({ query: "完全没有英文关键词的奇怪中文需求", lineCount: 1, limit: 5 }).map(
+      (item) => item.id,
+    )
+    expect(ids.length).toBeGreaterThanOrEqual(3)
+  })
+
+  test("treats line count as a preference for planner search", async () => {
+    const result = findMemeTemplates({
+      query: "完全没有英文关键词的奇怪中文需求",
+      lineCount: 3,
+      limit: 6,
+    })
+    expect(result.length).toBeGreaterThanOrEqual(3)
+    expect(result.some((item) => item.lines !== 3)).toBe(true)
+  })
 })
 
 describe("plugin descriptor", () => {
@@ -110,6 +127,21 @@ describe("generate_meme", () => {
     const result = await tool.execute({ prompt: "too many lines", template: "drake", lines: ["a", "b", "c"] }, context)
     expect((result as any).title).toBe("Too many meme lines")
     expect((result as any).attachments).toBeUndefined()
+  })
+
+  test("prompt fallback avoids templates with too few lines when explicit lines are provided", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const result = (await tool.execute(
+      {
+        prompt: "完全没有英文关键词的奇怪中文需求",
+        lines: ["第一行", "第二行", "第三行"],
+      },
+      context,
+    )) as any
+
+    expect(result.attachments).toHaveLength(1)
+    expect(result.metadata.lines).toHaveLength(3)
   })
 
   test("uploads a media-generation artifact-only SVG attachment", async () => {

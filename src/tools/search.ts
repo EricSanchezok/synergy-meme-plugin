@@ -7,6 +7,7 @@ export interface MemeTemplateSearchInput {
   limit?: number
   lineCount?: number
   style?: string
+  minLines?: number
 }
 
 function normalize(value: string) {
@@ -114,9 +115,15 @@ const classicTemplateIds = [
 function queryTokens(query: string) {
   const normalized = normalize(query)
   const tokens = new Set(asciiTokens(normalized))
+  let matchedExpansion = false
   for (const expansion of queryExpansions) {
     if (!expansion.match.test(query)) continue
+    matchedExpansion = true
     for (const token of expansion.tokens) tokens.add(token)
+  }
+  if (normalized && tokens.size === 0 && !matchedExpansion) {
+    tokens.add("classic")
+    tokens.add("random")
   }
   return [...tokens]
 }
@@ -171,6 +178,13 @@ function templateBoost(template: MemeTemplate, tokens: string[]) {
   return score
 }
 
+function lineFitScore(template: MemeTemplate, lineCount?: number) {
+  if (!lineCount) return 0
+  if (template.lines === lineCount) return 18
+  if (template.lines > lineCount) return Math.max(4, 12 - (template.lines - lineCount) * 2)
+  return -Math.min(12, (lineCount - template.lines) * 4)
+}
+
 export function scoreTemplate(template: MemeTemplate, query: string) {
   const q = normalize(query)
   if (!q) return classicTemplateIds.includes(template.id) ? 2 : 1
@@ -204,11 +218,11 @@ export function findMemeTemplates(input: MemeTemplateSearchInput) {
   const limit = input.limit ?? 12
   const style = input.style ? normalize(input.style) : undefined
   return templates
-    .filter((template) => (input.lineCount ? template.lines === input.lineCount : true))
+    .filter((template) => (input.minLines ? template.lines >= input.minLines : true))
     .filter((template) => (style ? template.styles.map(normalize).includes(style) : true))
     .map((template) => ({
       template,
-      score: scoreTemplate(template, input.query ?? ""),
+      score: scoreTemplate(template, input.query ?? "") + lineFitScore(template, input.lineCount),
     }))
     .filter((entry) => !input.query || entry.score > 0)
     .sort(
@@ -231,13 +245,13 @@ export function selectMemeTemplate(input: Omit<MemeTemplateSearchInput, "limit">
   for (const id of fallback) {
     const template = templates.find((item) => item.id === id)
     if (!template) continue
-    if (input.lineCount && template.lines !== input.lineCount) continue
+    if (input.minLines && template.lines < input.minLines) continue
     if (input.style && !template.styles.map(normalize).includes(normalize(input.style))) continue
     return template
   }
 
   return templates.find((template) => {
-    if (input.lineCount && template.lines !== input.lineCount) return false
+    if (input.minLines && template.lines < input.minLines) return false
     if (input.style && !template.styles.map(normalize).includes(normalize(input.style))) return false
     return true
   })
@@ -249,13 +263,13 @@ export const searchMemeTemplates = tool({
   args: {
     query: tool.schema.string().optional().describe("Search text, for example drake, distracted, brain, choice."),
     limit: tool.schema.number().int().min(1).max(50).optional().describe("Maximum number of templates to return."),
-    lineCount: tool.schema
-      .number()
-      .int()
-      .min(1)
-      .max(8)
-      .optional()
-      .describe("Only return templates with this line count."),
+      lineCount: tool.schema
+        .number()
+        .int()
+        .min(1)
+        .max(8)
+        .optional()
+        .describe("Prefer templates supporting this number of caption lines. Results may include nearby fits."),
     style: tool.schema.string().optional().describe("Only return templates supporting this style."),
   },
   async execute(args) {
@@ -265,6 +279,13 @@ export const searchMemeTemplates = tool({
       lines: template.lines,
       styles: template.styles,
       keywords: [...new Set([...(templateSemantics[template.id] ?? []), ...template.keywords])].slice(0, 10),
+      fit: args.lineCount
+        ? template.lines === args.lineCount
+          ? "exact"
+          : template.lines > args.lineCount
+            ? "supports-extra-lines"
+            : "fewer-lines"
+        : "unspecified",
     }))
 
     return {

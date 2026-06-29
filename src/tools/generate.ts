@@ -100,10 +100,12 @@ function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
     selectMemeTemplate({
       query: args.prompt,
       lineCount: preferredLineCount,
+      minLines: providedLines.length > 0 ? providedLines.length : undefined,
       style: requestedStyle,
     }) ??
     selectMemeTemplate({
       query: args.prompt,
+      minLines: providedLines.length > 0 ? providedLines.length : undefined,
       style: requestedStyle,
     })
 
