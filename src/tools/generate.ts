@@ -58,6 +58,11 @@ function attachmentPartId() {
   return `part_meme_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`
 }
 
+function isAbortError(error: unknown) {
+  if (!(error instanceof Error)) return false
+  return error.name === "AbortError" || /aborted|abort/i.test(error.message)
+}
+
 function cleanLine(value: string) {
   return value.replace(/\s+/g, " ").trim().slice(0, 180)
 }
@@ -182,7 +187,11 @@ export function createGenerateMemeTool(input: PluginInput) {
     async execute(args: GenerateMemeArgs, context: ToolContext): Promise<ToolResult> {
       const requestedTemplate = args.template?.trim().toLocaleLowerCase()
       const requestedStyle = args.style?.trim()
-      const subagentPlan = await planWithSubagent(args, context).catch(() => undefined)
+      const subagentPlan = await planWithSubagent(args, context).catch((error) => {
+        if (isAbortError(error) || context.abort.aborted) throw error
+        return undefined
+      })
+      if (context.abort.aborted) throw new Error("Meme generation was aborted.")
       const plan = subagentPlan ?? deterministicPlan(args)
       const template = plan ? templateById[plan.template] : undefined
 
