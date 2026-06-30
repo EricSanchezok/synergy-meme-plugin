@@ -3,7 +3,7 @@ import path from "node:path"
 import { plugin } from "../src"
 import { createGenerateMemeTool } from "../src/tools/generate"
 import { pickMeme } from "../src/tools/plan"
-import { findMemeTemplates } from "../src/tools/search"
+import { findMemeTemplates, searchMemeTemplates } from "../src/tools/search"
 
 const pluginDir = path.resolve(import.meta.dir, "..")
 
@@ -133,6 +133,20 @@ describe("internal template search", () => {
     })
     expect(result.length).toBeGreaterThanOrEqual(3)
     expect(result.some((item) => item.lines !== 3)).toBe(true)
+  })
+
+  test("planner search output includes ranking guidance", async () => {
+    const result = (await searchMemeTemplates.execute(
+      {
+        query: "程序员 debug 半天发现少了个分号",
+        limit: 3,
+      },
+      context,
+    )) as any
+    const payload = JSON.parse(result.output)
+    expect(payload.candidates).toHaveLength(3)
+    expect(payload.candidates[0].score).toBeGreaterThan(0)
+    expect(payload.candidates[0].bestFor.length).toBeGreaterThan(0)
   })
 })
 

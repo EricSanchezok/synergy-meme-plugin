@@ -179,6 +179,15 @@ const supportedStyles = new Set(templates.flatMap((template) => template.styles.
 const RANDOM_REQUEST_RE = /随机|随便|任意|random|whatever|surprise/i
 let randomSelectionIndex = 0
 
+function templateGuidance(template: MemeTemplate) {
+  const semantics = templateSemantics[template.id] ?? []
+  const signals = [...new Set([...semantics, ...template.keywords.flatMap(asciiTokens)])]
+    .filter(Boolean)
+    .slice(0, 8)
+  if (signals.length === 0) return "general reaction meme"
+  return signals.join(", ")
+}
+
 function queryTokens(query: string) {
   const normalized = normalize(query)
   const tokens = new Set(asciiTokens(normalized))
@@ -334,7 +343,7 @@ export function scoreTemplate(template: MemeTemplate, query: string) {
   return score
 }
 
-export function findMemeTemplates(input: MemeTemplateSearchInput) {
+export function rankMemeTemplates(input: MemeTemplateSearchInput) {
   const limit = input.limit ?? 12
   const style = input.style ? normalize(input.style) : undefined
   const styleFilter = style && supportedStyles.has(style) ? style : undefined
@@ -360,7 +369,10 @@ export function findMemeTemplates(input: MemeTemplateSearchInput) {
           hashScore(`${query}:${a.template.id}`),
     )
     .slice(0, limit)
-    .map(({ template }) => template)
+}
+
+export function findMemeTemplates(input: MemeTemplateSearchInput) {
+  return rankMemeTemplates(input).map(({ template }) => template)
 }
 
 export function selectMemeTemplate(
@@ -434,11 +446,13 @@ export const searchMemeTemplates = tool({
       .describe("Only return templates supporting this style."),
   },
   async execute(args) {
-    const matches = findMemeTemplates(args).map((template) => ({
+    const matches = rankMemeTemplates(args).map(({ template, score }) => ({
       id: template.id,
       name: template.name,
       lines: template.lines,
       styles: template.styles,
+      score: Number(score.toFixed(2)),
+      bestFor: templateGuidance(template),
       keywords: [
         ...new Set([
           ...(templateSemantics[template.id] ?? []),

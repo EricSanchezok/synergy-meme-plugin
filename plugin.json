@@ -100,8 +100,7 @@
           "session": "none",
           "workspace": "none",
           "config": "none"
-        },
-        "risk": "medium"
+        }
       },
       {
         "name": "search_meme_templates",
@@ -118,8 +117,7 @@
           "session": "none",
           "workspace": "none",
           "config": "none"
-        },
-        "risk": "low"
+        }
       },
       {
         "name": "pick_meme",
@@ -136,8 +134,7 @@
           "session": "none",
           "workspace": "none",
           "config": "none"
-        },
-        "risk": "low"
+        }
       }
     ],
     "agents": [
