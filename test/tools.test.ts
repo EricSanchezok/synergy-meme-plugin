@@ -243,7 +243,7 @@ describe("generate_meme", () => {
     expect(result.metadata.lines).toHaveLength(3)
   })
 
-  test("uploads a media-generation artifact-only SVG attachment", async () => {
+  test("uploads a media-generation attachment-only SVG attachment", async () => {
     const uploads: Array<{ file: File; text: string }> = []
     const tool = createGenerateMemeTool(fakeInput(uploads))
     const result = (await tool.execute(
@@ -259,16 +259,26 @@ describe("generate_meme", () => {
     expect(uploads[0].file.type).toBe("image/svg+xml")
     expect(uploads[0].text).toContain("<svg")
     expect(uploads[0].text).toContain("OLD WAY")
-    expect(result.output).toBe("")
+    expect(result.output).toContain("已生成并展示表情包")
+    expect(result.output).toContain("无需再查找文件或调用其他工具展示")
     expect(result.metadata.display.kind).toBe("media-generation")
     expect(result.metadata.display.visibility).toBe("media")
-    expect(result.metadata.display.presentation).toBe("artifact-only")
+    expect(result.metadata.display.presentation).toBe("attachment-only")
     expect(result.metadata.display.media).toEqual({
       type: "image",
       aspectRatio: "1:1",
     })
     expect(result.attachments).toHaveLength(1)
+    expect(result.attachments[0].type).toBe("attachment")
     expect(result.attachments[0].url).toBe("asset://asset-test")
+    expect(result.attachments[0].presentation).toEqual({
+      mode: "inline",
+      primary: true,
+    })
+    expect(result.attachments[0].model).toEqual({
+      mode: "summary",
+      summary: 'Meme image generated from template "Drakeposting" (drake) with text: old way / new way.',
+    })
     expect(result.metadata.display.primaryAttachmentIds).toEqual([
       result.attachments[0].id,
     ])

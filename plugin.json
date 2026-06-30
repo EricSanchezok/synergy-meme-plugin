@@ -86,7 +86,7 @@
         "display": {
           "kind": "media-generation",
           "visibility": "media",
-          "presentation": "artifact-only",
+          "presentation": "attachment-only",
           "media": {
             "type": "image",
             "aspectRatio": "1:1"

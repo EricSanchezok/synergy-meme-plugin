@@ -1,6 +1,5 @@
 import type { PluginInput } from "@ericsanchezok/synergy-plugin"
 import { tool, type ToolContext, type ToolResult } from "@ericsanchezok/synergy-plugin/tool"
-import z from "zod"
 import { PICK_TOOL_ID, PLANNER_SUBAGENT_ID, PLANNER_TIMEOUT_MS, SEARCH_TOOL_ID } from "../constants"
 import { templateById } from "../data/templates.generated"
 import { renderMemeSvg } from "../render/svg"
@@ -10,7 +9,7 @@ import { MemePlanJsonSchema, MemePlanSchema, type MemePlan } from "./plan"
 const memeDisplay = {
   kind: "media-generation",
   visibility: "media",
-  presentation: "artifact-only",
+  presentation: "attachment-only",
   media: {
     type: "image",
     aspectRatio: "1:1",
@@ -41,7 +40,14 @@ const generateMemeArgs = {
     .describe("Whether to uppercase meme text. Defaults to uppercase."),
 }
 
-type GenerateMemeArgs = z.infer<z.ZodObject<typeof generateMemeArgs>>
+type GenerateMemeArgs = {
+  prompt: string
+  template?: string
+  lines?: string[]
+  style?: string
+  layout?: "default" | "top" | "center"
+  captionCase?: "uppercase" | "preserve"
+}
 
 type AssetInfo = {
   id: string
@@ -279,10 +285,11 @@ export function createGenerateMemeTool(input: PluginInput) {
       })
       const uploaded = unwrapAssetInfo(await input.client.asset.upload({ file } as any, { throwOnError: true } as any))
       const partId = attachmentPartId()
+      const summary = `Meme image generated from template "${template.name}" (${template.id}) with text: ${lines.join(" / ")}.`
 
       return {
         title: template.name,
-        output: "",
+        output: `已生成并展示表情包：模板 ${template.name} (${template.id})，内容：${lines.join(" / ")}。无需再查找文件或调用其他工具展示。`,
         metadata: {
           prompt: args.prompt,
           template: template.id,
@@ -303,10 +310,23 @@ export function createGenerateMemeTool(input: PluginInput) {
             id: partId,
             sessionID: context.sessionID,
             messageID: context.messageID,
-            type: "file",
+            type: "attachment",
             mime: "image/svg+xml",
             filename,
             url: uploaded.url,
+            presentation: {
+              mode: "inline",
+              primary: true,
+            },
+            model: {
+              mode: "summary",
+              summary,
+            },
+            metadata: {
+              template: template.id,
+              templateName: template.name,
+              lines,
+            },
           },
         ],
       }
