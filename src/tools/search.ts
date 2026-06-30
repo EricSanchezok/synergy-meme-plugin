@@ -176,6 +176,8 @@ const classicTemplateIds = [
 ]
 
 const supportedStyles = new Set(templates.flatMap((template) => template.styles.map(normalize)))
+const RANDOM_REQUEST_RE = /随机|随便|任意|random|whatever|surprise/i
+let randomSelectionIndex = 0
 
 function queryTokens(query: string) {
   const normalized = normalize(query)
@@ -191,6 +193,10 @@ function queryTokens(query: string) {
     tokens.add("random")
   }
   return [...tokens]
+}
+
+export function isRandomMemeRequest(query: string | undefined): boolean {
+  return !!query && RANDOM_REQUEST_RE.test(query)
 }
 
 function templateTokens(template: MemeTemplate) {
@@ -360,7 +366,13 @@ export function findMemeTemplates(input: MemeTemplateSearchInput) {
 export function selectMemeTemplate(
   input: Omit<MemeTemplateSearchInput, "limit">,
 ): MemeTemplate | undefined {
-  const [match] = findMemeTemplates({ ...input, limit: 1 })
+  const matches = findMemeTemplates({ ...input, limit: isRandomMemeRequest(input.query) ? 8 : 1 })
+  if (isRandomMemeRequest(input.query) && matches.length > 0) {
+    const match = matches[randomSelectionIndex % matches.length]
+    randomSelectionIndex++
+    return match
+  }
+  const [match] = matches
   if (match) return match
 
   const fallback = [...classicTemplateIds].sort(
@@ -444,7 +456,16 @@ export const searchMemeTemplates = tool({
 
     return {
       title: "Meme templates",
-      output: JSON.stringify(matches, null, 2),
+      output: JSON.stringify(
+        {
+          guidance: isRandomMemeRequest(args.query)
+            ? "The request is open-ended. Pick a recognizable candidate that has not been overused in the current conversation; do not always choose the first result."
+            : "Pick the candidate whose keywords and line count best match the user's intent.",
+          candidates: matches,
+        },
+        null,
+        2,
+      ),
       metadata: {
         query: args.query ?? "",
         count: matches.length,
