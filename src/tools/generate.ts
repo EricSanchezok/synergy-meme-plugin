@@ -8,8 +8,8 @@ import { MemePlanJsonSchema, MemePlanSchema, type MemePlan } from "./plan"
 
 const memeDisplay = {
   kind: "media-generation",
-  visibility: "media",
   presentation: "attachment-only",
+  toolCard: "hidden",
   media: {
     type: "image",
     aspectRatio: "1:1",

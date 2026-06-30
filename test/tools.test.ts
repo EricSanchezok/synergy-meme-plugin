@@ -262,8 +262,8 @@ describe("generate_meme", () => {
     expect(result.output).toContain("已生成并展示表情包")
     expect(result.output).toContain("无需再查找文件或调用其他工具展示")
     expect(result.metadata.display.kind).toBe("media-generation")
-    expect(result.metadata.display.visibility).toBe("media")
     expect(result.metadata.display.presentation).toBe("attachment-only")
+    expect(result.metadata.display.toolCard).toBe("hidden")
     expect(result.metadata.display.media).toEqual({
       type: "image",
       aspectRatio: "1:1",
