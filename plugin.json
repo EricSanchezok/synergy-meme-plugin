@@ -67,7 +67,7 @@
     "resources": {
       "memoryMb": 128,
       "startupTimeoutMs": 15000,
-      "requestTimeoutMs": 120000,
+      "requestTimeoutMs": 180000,
       "maxConcurrentRequests": 4,
       "maxLogBytesPerMinute": 131072
     }
