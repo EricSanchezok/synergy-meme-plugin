@@ -175,6 +175,8 @@ const classicTemplateIds = [
   "gru",
 ]
 
+const supportedStyles = new Set(templates.flatMap((template) => template.styles.map(normalize)))
+
 function queryTokens(query: string) {
   const normalized = normalize(query)
   const tokens = new Set(asciiTokens(normalized))
@@ -329,25 +331,27 @@ export function scoreTemplate(template: MemeTemplate, query: string) {
 export function findMemeTemplates(input: MemeTemplateSearchInput) {
   const limit = input.limit ?? 12
   const style = input.style ? normalize(input.style) : undefined
+  const styleFilter = style && supportedStyles.has(style) ? style : undefined
+  const query = [input.query ?? "", style && !styleFilter ? style : ""].filter(Boolean).join(" ")
   return templates
     .filter((template) =>
       input.minLines ? template.lines >= input.minLines : true,
     )
     .filter((template) =>
-      style ? template.styles.map(normalize).includes(style) : true,
+      styleFilter ? template.styles.map(normalize).includes(styleFilter) : true,
     )
     .map((template) => ({
       template,
       score:
-        scoreTemplate(template, input.query ?? "") +
+        scoreTemplate(template, query) +
         lineFitScore(template, input.lineCount),
     }))
-    .filter((entry) => !input.query || entry.score > 0)
+    .filter((entry) => !query || entry.score > 0)
     .sort(
       (a, b) =>
         b.score - a.score ||
-        hashScore(`${input.query ?? ""}:${b.template.id}`) -
-          hashScore(`${input.query ?? ""}:${a.template.id}`),
+        hashScore(`${query}:${b.template.id}`) -
+          hashScore(`${query}:${a.template.id}`),
     )
     .slice(0, limit)
     .map(({ template }) => template)

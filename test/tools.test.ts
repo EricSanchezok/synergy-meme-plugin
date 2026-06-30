@@ -70,6 +70,17 @@ describe("internal template search", () => {
     expect(ids.length).toBeGreaterThanOrEqual(3)
   })
 
+  test("treats unknown semantic style as a search hint instead of an empty hard filter", async () => {
+    const ids = findMemeTemplates({
+      query: "程序员 debug 半天发现少了个分号",
+      style: "debug",
+      limit: 6,
+    }).map((item) => item.id)
+    expect(ids.length).toBeGreaterThanOrEqual(5)
+    expect(ids).toEqual(expect.arrayContaining(["facepalm", "scc", "fine"]))
+    expect(ids[0]).not.toBe("doge")
+  })
+
   test("prioritizes product and deployment work scenarios over generic defaults", async () => {
     const productIds = findMemeTemplates({
       query: "产品需求又改了",
@@ -158,6 +169,20 @@ describe("planner helpers", () => {
       layout: "default",
       captionCase: "uppercase",
     })
+  })
+
+  test("pick_meme drops semantic styles that are not native memegen styles", async () => {
+    const result = (await pickMeme.execute(
+      {
+        template: "scc",
+        lines: ["debug 半天", "少了分号"],
+        style: "debug",
+      },
+      context,
+    )) as any
+    const plan = JSON.parse(result.output)
+    expect(plan.template).toBe("scc")
+    expect(plan.style).toBeUndefined()
   })
 })
 
@@ -273,7 +298,7 @@ describe("generate_meme", () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].subagent).toBe("synergy-meme-planner")
     expect(calls[0].visibility).toBe("hidden")
-    expect(calls[0].timeoutMs).toBe(105_000)
+    expect(calls[0].timeoutMs).toBe(120_000)
     expect(calls[0].tools["*"]).toBe(false)
     expect(
       calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"],
@@ -283,6 +308,45 @@ describe("generate_meme", () => {
     expect(calls[0].output.maxRepairTurns).toBe(3)
     expect(result.metadata.planner).toBe("subagent")
     expect(uploads[0].text).toContain("SCATTERED TOOLS")
+  })
+
+  test("ignores unsupported planner style and still renders the selected meme", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const result = (await tool.execute(
+      {
+        prompt: "程序员 debug 半天发现少了个分号",
+      },
+      {
+        ...context,
+        task: {
+          run: async () => ({
+            taskId: "cortex-test",
+            sessionId: "session-child",
+            status: "completed",
+            output: "trajectory summary",
+            outputResult: {
+              mode: "structured",
+              status: "valid",
+              source: "structured_tool",
+              data: {
+                template: "scc",
+                lines: ["DEBUG 半天", "少了分号"],
+                style: "debug",
+                layout: "default",
+                captionCase: "uppercase",
+              },
+              repairTurns: 0,
+            },
+          }),
+        },
+      } as any,
+    )) as any
+
+    expect(result.attachments).toHaveLength(1)
+    expect(result.metadata.template).toBe("scc")
+    expect(result.metadata.style).toBe("default")
+    expect(uploads[0].text).toContain("少了分号")
   })
 
   test("generates from prompt only", async () => {

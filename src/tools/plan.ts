@@ -60,26 +60,12 @@ export const pickMeme = tool({
         ),
       }
     }
-    if (args.style && !template.styles.includes(args.style)) {
-      return {
-        title: "Unsupported meme style",
-        output: JSON.stringify(
-          {
-            error: "unsupported_style",
-            template: template.id,
-            style: args.style,
-            supportedStyles: template.styles,
-          },
-          null,
-          2,
-        ),
-      }
-    }
+    const style = args.style && template.styles.includes(args.style) ? args.style : undefined
 
     const plan: MemePlan = {
       template: template.id,
       lines,
-      ...(args.style ? { style: args.style } : {}),
+      ...(style ? { style } : {}),
       layout: args.layout ?? "default",
       captionCase: args.captionCase ?? "uppercase",
     }

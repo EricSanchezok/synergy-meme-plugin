@@ -118,7 +118,7 @@ function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
   return {
     template: template.id,
     lines: providedLines.length > 0 ? providedLines : inferCaptionLines(args.prompt, template.lines),
-    ...(requestedStyle ? { style: requestedStyle } : {}),
+    ...(requestedStyle && template.styles.includes(requestedStyle) ? { style: requestedStyle } : {}),
     layout: args.layout ?? "default",
     captionCase: args.captionCase ?? "uppercase",
   }
@@ -232,19 +232,9 @@ export function createGenerateMemeTool(input: PluginInput) {
         }
       }
 
-      const effectiveStyle = plan?.style ?? requestedStyle
-      if (effectiveStyle && !template.styles.includes(effectiveStyle)) {
-        return {
-          title: "Unsupported meme style",
-          output: `Template "${template.name}" does not support style "${effectiveStyle}". Supported styles: ${template.styles.join(", ") || "default"}.`,
-          metadata: {
-            prompt: args.prompt,
-            template: template.id,
-            style: effectiveStyle,
-            supportedStyles: template.styles,
-          },
-        }
-      }
+      const rawEffectiveStyle = plan?.style ?? requestedStyle
+      const effectiveStyle =
+        rawEffectiveStyle && template.styles.includes(rawEffectiveStyle) ? rawEffectiveStyle : undefined
 
       const rendered = await renderMemeSvg({
         pluginDir: input.pluginDir,
