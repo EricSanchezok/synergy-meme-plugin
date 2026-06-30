@@ -67,7 +67,10 @@
     "resources": {
       "memoryMb": 128,
       "startupTimeoutMs": 15000,
-      "requestTimeoutMs": 180000,
+      "toolInvocationTimeoutMs": 120000,
+      "hookInvocationTimeoutMs": 120000,
+      "bridgeRequestTimeoutMs": 120000,
+      "taskRunTimeoutMs": 120000,
       "maxConcurrentRequests": 4,
       "maxLogBytesPerMinute": 131072
     }
