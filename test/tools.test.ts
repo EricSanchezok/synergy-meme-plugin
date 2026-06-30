@@ -201,7 +201,7 @@ describe("planner helpers", () => {
 })
 
 describe("generate_meme", () => {
-  test("falls back when an optional template id is unknown", async () => {
+  test("rejects an explicit unknown template id without falling back", async () => {
     const uploads: Array<{ file: File; text: string }> = []
     const tool = createGenerateMemeTool(fakeInput(uploads))
     const result = (await tool.execute(
@@ -211,10 +211,11 @@ describe("generate_meme", () => {
       },
       context,
     )) as any
+    expect(result.title).toBe("No meme template found")
     expect(result.metadata.requestedTemplate).toBe("missing-template")
-    expect(result.metadata.template).not.toBe("missing-template")
-    expect(result.attachments).toHaveLength(1)
-    expect(uploads).toHaveLength(1)
+    expect(result.metadata.error).toBe("template_not_found")
+    expect(result.attachments).toBeUndefined()
+    expect(uploads).toHaveLength(0)
   })
 
   test("rejects too many lines", async () => {
@@ -227,7 +228,7 @@ describe("generate_meme", () => {
     expect((result as any).attachments).toBeUndefined()
   })
 
-  test("prompt fallback avoids templates with too few lines when explicit lines are provided", async () => {
+  test("direct planning avoids templates with too few lines when explicit lines are provided", async () => {
     const uploads: Array<{ file: File; text: string }> = []
     const tool = createGenerateMemeTool(fakeInput(uploads))
     const result = (await tool.execute(
@@ -312,7 +313,7 @@ describe("generate_meme", () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].subagent).toBe("synergy-meme-planner")
     expect(calls[0].visibility).toBe("hidden")
-    expect(calls[0].timeoutMs).toBe(90_000)
+    expect(calls[0].timeoutMs).toBe(120_000)
     expect(calls[0].tools["*"]).toBe(false)
     expect(
       calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"],
@@ -322,6 +323,105 @@ describe("generate_meme", () => {
     expect(calls[0].output.maxRepairTurns).toBe(3)
     expect(result.metadata.planner).toBe("subagent")
     expect(uploads[0].text).toContain("SCATTERED TOOLS")
+  })
+
+  test("uses the structured planner template exactly", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const result = (await tool.execute(
+      {
+        prompt: "随便发个好玩的表情包",
+      },
+      {
+        ...context,
+        task: {
+          run: async () => ({
+            taskId: "cortex-test",
+            sessionId: "session-child",
+            status: "completed",
+            output: "trajectory summary",
+            outputResult: {
+              mode: "structured",
+              status: "valid",
+              source: "structured_tool",
+              data: {
+                template: "kombucha",
+                lines: ["Me looking for a meme to send", "Spends 10 minutes scrolling"],
+                layout: "default",
+                captionCase: "uppercase",
+              },
+              repairTurns: 0,
+            },
+          }),
+        },
+      } as any,
+    )) as any
+
+    expect(result.metadata.planner).toBe("subagent")
+    expect(result.metadata.template).toBe("kombucha")
+    expect(result.attachments).toHaveLength(1)
+    expect(uploads[0].text).toContain("ME LOOKING FOR A MEME TO SEND")
+  })
+
+  test("returns an explicit error when planner fails", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const result = (await tool.execute(
+      {
+        prompt: "随便发个好玩的表情包",
+      },
+      {
+        ...context,
+        task: {
+          run: async () => ({
+            taskId: "cortex-test",
+            sessionId: "session-child",
+            status: "error",
+            output: "",
+            error: "Structured Cortex output is invalid",
+          }),
+        },
+      } as any,
+    )) as any
+
+    expect(result.title).toBe("Meme planning failed")
+    expect(result.metadata.error).toBe("planner_failed")
+    expect(result.attachments).toBeUndefined()
+    expect(uploads).toHaveLength(0)
+  })
+
+  test("returns an explicit error when planner output is invalid", async () => {
+    const uploads: Array<{ file: File; text: string }> = []
+    const tool = createGenerateMemeTool(fakeInput(uploads))
+    const result = (await tool.execute(
+      {
+        prompt: "随便发个好玩的表情包",
+      },
+      {
+        ...context,
+        task: {
+          run: async () => ({
+            taskId: "cortex-test",
+            sessionId: "session-child",
+            status: "completed",
+            output: "trajectory summary",
+            outputResult: {
+              mode: "structured",
+              status: "invalid",
+              source: "structured_tool",
+              validationErrors: ["template is required"],
+              repairTurns: 3,
+            },
+          }),
+        },
+      } as any,
+    )) as any
+
+    expect(result.title).toBe("Meme planning failed")
+    expect(result.output).toBe("Meme planner did not return a valid structured plan.")
+    expect(result.metadata.error).toBe("planner_failed")
+    expect(result.attachments).toBeUndefined()
+    expect(uploads).toHaveLength(0)
   })
 
   test("ignores unsupported planner style and still renders the selected meme", async () => {
@@ -363,7 +463,7 @@ describe("generate_meme", () => {
     expect(uploads[0].text).toContain("少了分号")
   })
 
-  test("generates from prompt only", async () => {
+  test("requires planner for prompt-only generation", async () => {
     const uploads: Array<{ file: File; text: string }> = []
     const tool = createGenerateMemeTool(fakeInput(uploads))
     const result = (await tool.execute(
@@ -371,8 +471,9 @@ describe("generate_meme", () => {
       context,
     )) as any
 
-    expect(result.attachments).toHaveLength(1)
-    expect(typeof result.metadata.template).toBe("string")
-    expect(uploads[0].text).toContain("<svg")
+    expect(result.title).toBe("Meme planning failed")
+    expect(result.metadata.error).toBe("planner_failed")
+    expect(result.attachments).toBeUndefined()
+    expect(uploads).toHaveLength(0)
   })
 })

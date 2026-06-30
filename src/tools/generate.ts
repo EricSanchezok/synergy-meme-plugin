@@ -95,24 +95,27 @@ function inferCaptionLines(prompt: string, maxLines: number) {
   return [clean]
 }
 
-function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
+function directPlan(args: GenerateMemeArgs): MemePlan | undefined {
+  if (!args.template?.trim() && !args.lines?.length) return undefined
+
   const requestedTemplate = args.template?.trim().toLocaleLowerCase()
   const providedLines = (args.lines ?? []).map(cleanLine).filter(Boolean)
   const requestedStyle = args.style?.trim()
   const preferredLineCount = providedLines.length > 0 ? providedLines.length : 2
   const template =
-    (requestedTemplate ? templateById[requestedTemplate] : undefined) ??
-    selectMemeTemplate({
-      query: args.prompt,
-      lineCount: preferredLineCount,
-      minLines: providedLines.length > 0 ? providedLines.length : undefined,
-      style: requestedStyle,
-    }) ??
-    selectMemeTemplate({
-      query: args.prompt,
-      minLines: providedLines.length > 0 ? providedLines.length : undefined,
-      style: requestedStyle,
-    })
+    requestedTemplate
+      ? templateById[requestedTemplate]
+      : selectMemeTemplate({
+          query: args.prompt,
+          lineCount: preferredLineCount,
+          minLines: providedLines.length > 0 ? providedLines.length : undefined,
+          style: requestedStyle,
+        }) ??
+        selectMemeTemplate({
+          query: args.prompt,
+          minLines: providedLines.length > 0 ? providedLines.length : undefined,
+          style: requestedStyle,
+        })
 
   if (!template) return undefined
   return {
@@ -124,9 +127,13 @@ function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
   }
 }
 
-async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): Promise<MemePlan | undefined> {
+type PlannerFailure = {
+  error: string
+}
+
+async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): Promise<MemePlan> {
   const task = (context as any).task
-  if (!task?.run) return undefined
+  if (!task?.run) throw new Error("Meme planner task service is unavailable.")
   const constraints = [
     args.template ? `Preferred template: ${args.template}` : undefined,
     args.lines?.length ? `Requested lines: ${JSON.stringify(args.lines)}` : undefined,
@@ -165,9 +172,12 @@ async function planWithSubagent(args: GenerateMemeArgs, context: ToolContext): P
       maxRepairTurns: 3,
     },
   })
-  if (result.status !== "completed") return undefined
+  if (result.status !== "completed") {
+    throw new Error(result.error ?? `Meme planner finished with status "${result.status}".`)
+  }
   const parsed = MemePlanSchema.safeParse(result.outputResult?.mode === "structured" ? result.outputResult.data : undefined)
-  return parsed.success ? parsed.data : undefined
+  if (!parsed.success) throw new Error("Meme planner did not return a valid structured plan.")
+  return parsed.data
 }
 
 function unwrapAssetInfo(result: unknown): AssetInfo {
@@ -187,12 +197,31 @@ export function createGenerateMemeTool(input: PluginInput) {
     async execute(args: GenerateMemeArgs, context: ToolContext): Promise<ToolResult> {
       const requestedTemplate = args.template?.trim().toLocaleLowerCase()
       const requestedStyle = args.style?.trim()
-      const subagentPlan = await planWithSubagent(args, context).catch((error) => {
-        if (isAbortError(error) || context.abort.aborted) throw error
-        return undefined
-      })
+      const directRequested = !!requestedTemplate || !!args.lines?.length
+      const direct = directPlan(args)
+      const subagentPlan: MemePlan | PlannerFailure | undefined = directRequested
+        ? undefined
+        : await planWithSubagent(args, context).catch((error) => {
+            if (isAbortError(error) || context.abort.aborted) throw error
+            return {
+              error: error instanceof Error ? error.message : String(error),
+            }
+          })
       if (context.abort.aborted) throw new Error("Meme generation was aborted.")
-      const plan = subagentPlan ?? deterministicPlan(args)
+      if (subagentPlan && "error" in subagentPlan) {
+        return {
+          title: "Meme planning failed",
+          output: subagentPlan.error,
+          metadata: {
+            prompt: args.prompt,
+            requestedTemplate,
+            error: "planner_failed",
+          },
+        }
+      }
+
+      const plan = direct ?? subagentPlan
+      const planner = directRequested ? "direct" : "subagent"
       const template = plan ? templateById[plan.template] : undefined
 
       if (!template) {
@@ -260,7 +289,7 @@ export function createGenerateMemeTool(input: PluginInput) {
           templateName: template.name,
           requestedTemplate,
           lines,
-          planner: subagentPlan ? "subagent" : "fallback",
+          planner,
           style: effectiveStyle ?? "default",
           dimensions: { width: rendered.width, height: rendered.height },
           assetId: uploaded.id,
