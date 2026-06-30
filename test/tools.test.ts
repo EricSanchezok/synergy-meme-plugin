@@ -312,7 +312,7 @@ describe("generate_meme", () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].subagent).toBe("synergy-meme-planner")
     expect(calls[0].visibility).toBe("hidden")
-    expect(calls[0].timeoutMs).toBe(120_000)
+    expect(calls[0].timeoutMs).toBe(90_000)
     expect(calls[0].tools["*"]).toBe(false)
     expect(
       calls[0].tools["plugin__synergy-meme-plugin__search_meme_templates"],
