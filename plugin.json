@@ -1,12 +1,17 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Generate meme images from bundled memegen.link templates.",
   "author": "EricSanchez",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "repository": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "license": "MIT",
-  "keywords": ["synergy-plugin", "meme", "image", "memegen"],
+  "keywords": [
+    "synergy-plugin",
+    "meme",
+    "image",
+    "memegen"
+  ],
   "icon": "icons/market.svg",
   "engines": {
     "synergy": ">=2.4.3",
@@ -24,7 +29,9 @@
       "shell": false,
       "mcp": "none",
       "task": {
-        "agents": ["synergy-meme-planner"],
+        "agents": [
+          "synergy-meme-planner"
+        ],
         "maxRuntimeMs": 120000
       }
     },
@@ -42,14 +49,16 @@
     "ui": {
       "toolRenderers": false,
       "partRenderers": false,
-      "workspacePanels": false,
-      "globalPanels": false,
       "settings": false,
       "themes": false,
       "icons": false,
-      "routes": false,
       "trustedImport": false,
-      "sandboxIframe": false
+      "sandboxIframe": false,
+      "workbenchPanels": false,
+      "appPanels": false,
+      "messageSlots": false,
+      "appRoutes": false,
+      "commands": false
     },
     "hooks": {
       "events": "none",
@@ -85,12 +94,11 @@
         "kind": "generate",
         "display": {
           "kind": "media-generation",
-          "visibility": "media",
-          "presentation": "artifact-only",
           "media": {
             "type": "image",
             "aspectRatio": "1:1"
-          }
+          },
+          "toolCard": "hidden"
         },
         "capabilities": {
           "filesystem": "none",
@@ -108,7 +116,9 @@
         "icon": "search",
         "category": "media",
         "kind": "search",
-        "exposure": { "mode": "internal" },
+        "exposure": {
+          "mode": "internal"
+        },
         "capabilities": {
           "filesystem": "none",
           "network": false,
@@ -125,7 +135,9 @@
         "icon": "check",
         "category": "media",
         "kind": "plan",
-        "exposure": { "mode": "internal" },
+        "exposure": {
+          "mode": "internal"
+        },
         "capabilities": {
           "filesystem": "none",
           "network": false,
