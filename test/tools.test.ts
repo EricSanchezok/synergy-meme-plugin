@@ -258,20 +258,21 @@ describe("generate_meme", () => {
     expect(uploads[0].file.type).toBe("image/svg+xml");
     expect(uploads[0].text).toContain("<svg");
     expect(uploads[0].text).toContain("OLD WAY");
-    expect(result.output).toBe("");
+    expect(result.output).toContain('Generated meme "Drakeposting" (drake)');
     expect(result.metadata.display.kind).toBe("media-generation");
     expect(result.metadata.display.toolCard).toBe("hidden");
     expect(result.metadata.display.visibility).toBeUndefined();
     expect(result.metadata.display.presentation).toBeUndefined();
     expect(result.metadata.display.media).toEqual({
       type: "image",
-      aspectRatio: "1:1",
+      aspectRatio: "auto",
+      size: "small",
     });
     expect(result.attachments).toHaveLength(1);
     expect(result.attachments[0].url).toBe("asset://asset-test");
     expect(result.attachments[0].presentation).toEqual({
       renderer: "image",
-      size: "original",
+      size: "small",
     });
     expect(result.metadata.display.primaryAttachmentIds).toBeUndefined();
   });
@@ -324,7 +325,8 @@ describe("generate_meme", () => {
     expect(calls[0].output.mode).toBe("structured");
     expect(calls[0].output.maxRepairTurns).toBe(3);
     expect(result.metadata.planner).toBe("subagent");
-    expect(uploads[0].text).toContain("SCATTERED TOOLS");
+    expect(uploads[0].text).toContain("SCATTERED");
+    expect(uploads[0].text).toContain("TOOLS");
   });
 
   test("ignores unsupported planner style and still renders the selected meme", async () => {

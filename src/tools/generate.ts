@@ -21,7 +21,8 @@ const memeDisplay = {
   toolCard: "hidden",
   media: {
     type: "image",
-    aspectRatio: "1:1",
+    aspectRatio: "auto",
+    size: "small",
   },
 } as const;
 
@@ -312,7 +313,7 @@ export function createGenerateMemeTool(input: PluginInput) {
 
       return {
         title: template.name,
-        output: "",
+        output: `Generated meme "${template.name}" (${template.id}) with ${lines.length} caption line${lines.length === 1 ? "" : "s"}.`,
         metadata: {
           prompt: args.prompt,
           template: template.id,
@@ -336,7 +337,7 @@ export function createGenerateMemeTool(input: PluginInput) {
             url: uploaded.url,
             presentation: {
               renderer: "image",
-              size: "original",
+              size: "small",
             },
           },
         ],

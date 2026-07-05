@@ -6,12 +6,7 @@
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "repository": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "license": "MIT",
-  "keywords": [
-    "synergy-plugin",
-    "meme",
-    "image",
-    "memegen"
-  ],
+  "keywords": ["synergy-plugin", "meme", "image", "memegen"],
   "icon": "icons/market.svg",
   "engines": {
     "synergy": ">=2.4.3",
@@ -29,9 +24,7 @@
       "shell": false,
       "mcp": "none",
       "task": {
-        "agents": [
-          "synergy-meme-planner"
-        ],
+        "agents": ["synergy-meme-planner"],
         "maxRuntimeMs": 120000
       }
     },
@@ -96,7 +89,8 @@
           "kind": "media-generation",
           "media": {
             "type": "image",
-            "aspectRatio": "1:1"
+            "aspectRatio": "auto",
+            "size": "small"
           },
           "toolCard": "hidden"
         },
@@ -153,6 +147,7 @@
         "name": "synergy-meme-planner",
         "description": "Hidden planner that selects a meme template and caption plan using internal helper tools.",
         "mode": "subagent",
+        "modelRole": "mid",
         "hidden": true,
         "permission": {
           "*": "deny",
