@@ -23,13 +23,17 @@ bun run validate:plugin
 bun run build:plugin
 bun run pack:plugin
 bun run sign:plugin synergy-meme-plugin-0.3.7.synergy-plugin.tgz
+
+# Inspect template ranking while tuning search semantics.
+bun run search:templates -- "程序员 debug 半天发现少了分号" --lines 2 --limit 10
+bun run search:templates -- "old way vs new way" --lines 2 --json
 ```
 
 ## Tools
 
 - `generate_meme`: accepts an emotional brief with the situation, feeling, contrast, and optional caption idea; optionally accepts `template` and `lines`; chooses a bundled template when needed; renders a local SVG meme; and attaches it as the primary visual result.
 
-`generate_meme` declares Synergy's media-generation display protocol with a hidden tool card, a compact pending placeholder, and a small generated SVG image attachment. Recent Synergy clients show the unified image-generation placeholder while the tool runs, then promote the generated meme into the final turn response instead of showing a tool card.
+`generate_meme` declares Synergy's media-generation display protocol with a hidden tool card, a compact pending placeholder, and a medium generated SVG image attachment. Recent Synergy clients show the unified image-generation placeholder while the tool runs, then promote the generated meme into the final turn response instead of showing a tool card.
 
 ## Publishing
 
