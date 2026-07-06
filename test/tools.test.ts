@@ -1,4 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import type {
+  ToolContext,
+  ToolTaskRunInput,
+  ToolTaskRunResult,
+} from "@ericsanchezok/synergy-plugin/tool";
 import path from "node:path";
 import { plugin } from "../src";
 import { createGenerateMemeTool } from "../src/tools/generate";
@@ -28,12 +33,18 @@ function fakeInput(uploads: Array<{ file: File; text: string }> = []) {
   } as any;
 }
 
-const context = {
+const context: ToolContext = {
   sessionID: "session-test",
   messageID: "message-test",
   agent: "synergy",
   abort: new AbortController().signal,
 };
+
+function contextWithTask(
+  run: (input: ToolTaskRunInput) => Promise<ToolTaskRunResult>,
+): ToolContext {
+  return { ...context, task: { run } };
+}
 
 describe("internal template search", () => {
   test("finds common templates", async () => {
@@ -321,32 +332,23 @@ describe("generate_meme", () => {
       {
         prompt: "legacy scattered tools vs one polished meme tool",
       },
-      {
-        ...context,
-        task: {
-          run: async (input: any) => {
-            calls.push(input);
-            return {
-              taskId: "cortex-test",
-              sessionId: "session-child",
-              status: "completed",
-              output: "trajectory summary",
-              outputResult: {
-                mode: "structured",
-                status: "valid",
-                source: "structured_tool",
-                data: {
-                  template: "drake",
-                  lines: ["scattered tools", "one polished tool"],
-                  layout: "default",
-                  captionCase: "uppercase",
-                },
-                repairTurns: 0,
-              },
-            };
+      contextWithTask(async (input) => {
+        calls.push(input);
+        return {
+          taskId: "cortex-test",
+          sessionId: "session-child",
+          status: "completed",
+          output: {
+            mode: "structured",
+            value: {
+              template: "drake",
+              lines: ["scattered tools", "one polished tool"],
+              layout: "default",
+              captionCase: "uppercase",
+            },
           },
-        },
-      } as any,
+        };
+      }),
     )) as any;
 
     expect(calls).toHaveLength(1);
@@ -372,6 +374,36 @@ describe("generate_meme", () => {
       {
         prompt: "程序员 debug 半天发现少了个分号",
       },
+      contextWithTask(async () => ({
+        taskId: "cortex-test",
+        sessionId: "session-child",
+        status: "completed",
+        output: {
+          mode: "structured",
+          value: {
+            template: "scc",
+            lines: ["DEBUG 半天", "少了分号"],
+            style: "debug",
+            layout: "default",
+            captionCase: "uppercase",
+          },
+        },
+      })),
+    )) as any;
+
+    expect(result.attachments).toHaveLength(1);
+    expect(result.metadata.template).toBe("scc");
+    expect(result.metadata.style).toBe("default");
+    expect(uploads[0].text).toContain("少了分号");
+  });
+
+  test("ignores legacy structured outputResult shape from old Cortex contract", async () => {
+    const uploads: Array<{ file: File; text: string }> = [];
+    const tool = createGenerateMemeTool(fakeInput(uploads));
+    const result = (await tool.execute(
+      {
+        prompt: "legacy structured contract should fall back safely",
+      },
       {
         ...context,
         task: {
@@ -379,15 +411,13 @@ describe("generate_meme", () => {
             taskId: "cortex-test",
             sessionId: "session-child",
             status: "completed",
-            output: "trajectory summary",
             outputResult: {
               mode: "structured",
               status: "valid",
               source: "structured_tool",
               data: {
-                template: "scc",
-                lines: ["DEBUG 半天", "少了分号"],
-                style: "debug",
+                template: "drake",
+                lines: ["legacy shape", "should not win"],
                 layout: "default",
                 captionCase: "uppercase",
               },
@@ -399,9 +429,8 @@ describe("generate_meme", () => {
     )) as any;
 
     expect(result.attachments).toHaveLength(1);
-    expect(result.metadata.template).toBe("scc");
-    expect(result.metadata.style).toBe("default");
-    expect(uploads[0].text).toContain("少了分号");
+    expect(result.metadata.planner).toBe("fallback");
+    expect(uploads[0].text).not.toContain("LEGACY SHAPE");
   });
 
   test("generates from prompt only", async () => {

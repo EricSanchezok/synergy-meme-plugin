@@ -169,7 +169,7 @@ async function planWithSubagent(
   args: GenerateMemeArgs,
   context: ToolContext,
 ): Promise<MemePlan | undefined> {
-  const task = (context as any).task;
+  const task = context.task;
   if (!task?.run) return undefined;
   const constraints = [
     args.template ? `Preferred template: ${args.template}` : undefined,
@@ -214,9 +214,7 @@ async function planWithSubagent(
   });
   if (result.status !== "completed") return undefined;
   const parsed = MemePlanSchema.safeParse(
-    result.outputResult?.mode === "structured"
-      ? result.outputResult.data
-      : undefined,
+    result.output?.mode === "structured" ? result.output.value : undefined,
   );
   return parsed.success ? parsed.data : undefined;
 }
