@@ -66,7 +66,9 @@ export const plugin: PluginDescriptor = {
         [PICK_TOOL_NAME]: pickMeme,
       },
       async "experimental.chat.system.transform"(hookInput, output) {
-        if (!shouldInjectMemeExpression(hookInput)) return;
+        const agent = (hookInput as any).agent as string | undefined;
+        const small = !!(hookInput as any).small;
+        if (!shouldInjectMemeExpression({ agent: agent ?? "", small })) return;
         if (
           output.system.some((part) =>
             part.includes('<meme-expression source="synergy-meme-plugin">'),
