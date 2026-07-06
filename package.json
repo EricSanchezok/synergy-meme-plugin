@@ -7,6 +7,7 @@
     "sync:templates": "bun run scripts/sync-templates.ts",
     "verify:templates": "bun run scripts/verify-templates.ts",
     "search:templates": "bun run scripts/search-templates.ts",
+    "eval:search": "bun run scripts/eval-search.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "dev": "synergy-plugin dev",
