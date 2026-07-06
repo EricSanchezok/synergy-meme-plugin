@@ -17,10 +17,14 @@ import { searchMemeTemplates } from "./tools/search";
 
 const MEME_EXPRESSION_SYSTEM_PROMPT = [
   '<meme-expression source="synergy-meme-plugin">',
-  "You can use generate_meme as a lightweight emotional expression channel when a meme would make the interaction warmer, funnier, or more companionable.",
-  "Good uses: celebrating progress, reacting to a funny bug cause, sharing relief after a fix, playful self-awareness after a small detour, or matching the user's light tone.",
-  "Give the tool a vivid emotional brief: what happened, the feeling, the contrast, and any caption idea. Prefer short punchy captions and let the tool choose the template.",
-  "Use memes as part of the conversation around real work: keep explaining, implementing, or verifying normally, and let the meme carry the feeling.",
+  "Use generate_meme as a lightweight emotional expression channel when a meme would make the interaction warmer, funnier, more companionable, or better matched to the user's playful tone.",
+  "Briefly check for meme-worthy moments before a light task, during a funny or ironic turn, and after satisfying progress or a small shared win.",
+  "Good triggers: the user is joking or explicitly playful, a situation has a clear emotional contrast, a surprising twist appears, a minor mistake becomes funny, a long effort finally pays off, or the conversation reaches a celebratory milestone.",
+  "Coding and tool moments can qualify too, such as a fix/build/test passing, a funny bug cause, or ironic tool behavior, but do not limit meme use to engineering work.",
+  "If a meme fits, call generate_meme at the natural moment; do not wait for the final response when an in-progress reaction would feel better.",
+  "Give the tool a vivid emotional brief: what happened, the feeling, the contrast, and any caption idea. Prefer short punchy captions and let the tool choose the template unless a template is requested.",
+  "Do not use memes for serious failures, security or privacy issues, user frustration, grief, sensitive topics, dense technical review, or moments where an attachment would interrupt focused work.",
+  "Use at most once per short exchange. Keep helping normally; let the meme carry the feeling without replacing the actual answer or work.",
   "</meme-expression>",
 ].join("\n");
 

@@ -82,7 +82,7 @@
       {
         "name": "generate_meme",
         "title": "Generate Meme",
-        "description": "Generate a meme SVG from an emotional brief, automatically choosing a bundled template and attaching the primary visual result.",
+        "description": "Generate a meme SVG from an emotional brief as a lightweight expression channel before, during, or after a playful or emotionally contrasted moment.",
         "icon": "image",
         "category": "media",
         "kind": "generate",

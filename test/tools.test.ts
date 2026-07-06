@@ -193,8 +193,13 @@ describe("plugin descriptor", () => {
       subagent,
     );
 
-    expect(primary.system.join("\n")).toContain("meme-expression");
-    expect(primary.system.join("\n")).toContain("emotional expression channel");
+    const prompt = primary.system.join("\n");
+    expect(prompt).toContain("meme-expression");
+    expect(prompt).toContain("before a light task");
+    expect(prompt).toContain("clear emotional contrast");
+    expect(prompt).toContain("do not limit meme use to engineering work");
+    expect(prompt).toContain("sensitive topics");
+    expect(prompt).toContain("Use at most once per short exchange");
     expect(subagent.system).toHaveLength(0);
   });
 });

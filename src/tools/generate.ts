@@ -236,7 +236,7 @@ function unwrapAssetInfo(result: unknown): AssetInfo {
 export function createGenerateMemeTool(input: PluginInput) {
   const definition = {
     description:
-      "Generate a meme image from an emotional brief. Describe what happened, the feeling, the contrast, and any caption idea; the tool picks a bundled template unless one is explicitly named.",
+      "Generate a meme image from an emotional brief. Use this as a lightweight emotional expression channel before a light task, during a funny or ironic moment, or after satisfying progress when a meme would make the interaction warmer, funnier, more companionable, or better matched to the user's playful tone. Good triggers include explicit user playfulness, clear emotional contrast, a surprising twist, a funny minor mistake, long effort paying off, or a celebratory milestone. Coding and tool moments can qualify too, but do not limit meme use to engineering work. Do not use for serious failures, security or privacy issues, user frustration, grief, sensitive topics, dense technical review, or when an attachment would interrupt focused work. Use at most once per short exchange. Describe what happened, the feeling, the contrast, and any caption idea; the tool picks a bundled template unless one is explicitly named.",
     display: memeDisplay,
     args: generateMemeArgs,
     async execute(

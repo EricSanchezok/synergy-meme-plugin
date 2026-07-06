@@ -6,7 +6,7 @@ The plugin is fully local at runtime: templates and the Anton font are packaged 
 
 Template metadata and blank images are snapshotted from the public [memegen.link templates API](https://api.memegen.link/templates/). The renderer uses bundled local template images and the bundled Anton font at runtime, so generation does not need network access.
 
-The plugin also injects a short system prompt for the primary `synergy` and `synergy-max` agents, teaching them to use memes as a lightweight emotional expression channel when it fits the conversation.
+The plugin also injects a short system prompt for the primary `synergy` and `synergy-max` agents, teaching them to use memes as a lightweight emotional expression channel before, during, or after playful and emotionally contrasted moments when it fits the conversation.
 
 ## Development
 
@@ -32,7 +32,7 @@ bun run eval:search               # run fixture evaluation and see coverage stat
 
 ## Tools
 
-- `generate_meme`: accepts an emotional brief with the situation, feeling, contrast, and optional caption idea; optionally accepts `template` and `lines`; chooses a bundled template when needed; renders a local SVG meme; and attaches it as the primary visual result.
+- `generate_meme`: accepts an emotional brief with the situation, feeling, contrast, and optional caption idea; optionally accepts `template` and `lines`; chooses a bundled template when needed; renders a local SVG meme; and attaches it as the primary visual result. Agents are encouraged to use it sparingly before, during, or after work when a meme would make a light interaction warmer, funnier, more companionable, or better matched to the user's playful tone.
 
 `generate_meme` declares Synergy's media-generation display protocol with a hidden tool card, a compact pending placeholder, and a medium generated SVG image attachment. Recent Synergy clients show the unified image-generation placeholder while the tool runs, then promote the generated meme into the final turn response instead of showing a tool card.
 
