@@ -166,6 +166,35 @@ describe("plugin descriptor", () => {
     });
     expect(hooks.agents?.["synergy-meme-planner"]?.hidden).toBe(true);
   });
+
+  test("injects meme expression prompt only for primary agents", async () => {
+    const hooks = await plugin.init(fakeInput());
+    const primary = { system: [] as string[] };
+    const subagent = { system: [] as string[] };
+
+    await hooks["experimental.chat.system.transform"]?.(
+      {
+        phase: "final",
+        sessionID: "session-test",
+        agent: "synergy-max",
+        model: { providerID: "test", modelID: "test-model" },
+      },
+      primary,
+    );
+    await hooks["experimental.chat.system.transform"]?.(
+      {
+        phase: "final",
+        sessionID: "session-test",
+        agent: "synergy-meme-planner",
+        model: { providerID: "test", modelID: "test-model" },
+      },
+      subagent,
+    );
+
+    expect(primary.system.join("\n")).toContain("meme-expression");
+    expect(primary.system.join("\n")).toContain("emotional expression channel");
+    expect(subagent.system).toHaveLength(0);
+  });
 });
 
 describe("planner helpers", () => {

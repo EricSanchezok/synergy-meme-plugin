@@ -1,7 +1,7 @@
 {
   "name": "synergy-meme-plugin",
-  "version": "0.3.6",
-  "description": "Generate meme images from bundled memegen.link templates.",
+  "version": "0.3.7",
+  "description": "Generate expressive meme images from bundled memegen.link templates.",
   "author": "EricSanchez",
   "homepage": "https://github.com/EricSanchezok/synergy-meme-plugin",
   "repository": "https://github.com/EricSanchezok/synergy-meme-plugin",
@@ -15,7 +15,7 @@
   "main": "./src/index.ts",
   "trust": {
     "requestedTier": "declarative",
-    "reason": "The plugin contributes runtime tools only and does not load custom Web UI code."
+    "reason": "The plugin contributes local meme tools and a prompt-transform hook for primary-agent emotional expression; it does not load custom Web UI code."
   },
   "permissions": {
     "tools": {
@@ -59,7 +59,7 @@
       "config": false,
       "toolExecute": "none",
       "permissionAsk": "none",
-      "promptTransform": false,
+      "promptTransform": true,
       "compactionTransform": false
     }
   },
@@ -82,7 +82,7 @@
       {
         "name": "generate_meme",
         "title": "Generate Meme",
-        "description": "Generate a meme SVG from a prompt, automatically choosing a bundled template and attaching the primary visual result.",
+        "description": "Generate a meme SVG from an emotional brief, automatically choosing a bundled template and attaching the primary visual result.",
         "icon": "image",
         "category": "media",
         "kind": "generate",

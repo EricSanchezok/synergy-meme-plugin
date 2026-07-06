@@ -4,7 +4,7 @@ import {
   type ToolContext,
   type ToolResult,
 } from "@ericsanchezok/synergy-plugin/tool";
-import z from "zod";
+
 import {
   PICK_TOOL_ID,
   PLANNER_SUBAGENT_ID,
@@ -31,7 +31,9 @@ const generateMemeArgs = {
     .string()
     .min(1)
     .max(600)
-    .describe("Natural-language meme request or caption idea."),
+    .describe(
+      "Emotional meme brief. Include the situation, feeling, contrast, and optional caption idea, e.g. 'After chasing a schema bug for an hour, it was the old package all along; relieved but slightly haunted.'",
+    ),
   template: tool.schema
     .string()
     .min(1)
@@ -59,7 +61,14 @@ const generateMemeArgs = {
     .describe("Whether to uppercase meme text. Defaults to uppercase."),
 };
 
-type GenerateMemeArgs = z.infer<z.ZodObject<typeof generateMemeArgs>>;
+type GenerateMemeArgs = {
+  prompt: string;
+  template?: string;
+  lines?: string[];
+  style?: string;
+  layout?: "default" | "top" | "center";
+  captionCase?: "uppercase" | "preserve";
+};
 
 type AssetInfo = {
   id: string;
@@ -175,18 +184,17 @@ async function planWithSubagent(
     subagent: PLANNER_SUBAGENT_ID,
     description: "Plan meme",
     prompt: [
-      "Choose a meme plan for the user's request.",
+      "Choose a meme plan for this emotional meme brief.",
+      "Infer the situation, emotion, contrast, and punchline before choosing a template.",
+      "Search with rich intent words that may not appear literally in the request: relief, chaos, confusion, victory, awkwardness, frustration, irony, overconfidence, debugging, deployment, product changes, shared struggle.",
+      "Prefer a recognizable template whose visual joke matches the emotional arc, then write short caption lines that make the feeling obvious.",
       "",
-      `Request: ${args.prompt}`,
+      `Brief: ${args.prompt}`,
       constraints.length
         ? `Constraints:\n${constraints.map((item) => `- ${item}`).join("\n")}`
         : "",
       "",
-      "Use the available helper tools only:",
-      "- search_meme_templates to inspect candidate templates.",
-      "- pick_meme to validate and normalize a candidate plan before submitting the final structured result.",
-      "",
-      "Prefer a recognizable meme template that matches the requested emotion or contrast.",
+      "Use search_meme_templates to inspect candidates, then use pick_meme to validate the final plan.",
       "Submit the final result using the structured output contract.",
     ]
       .filter(Boolean)
@@ -228,7 +236,7 @@ function unwrapAssetInfo(result: unknown): AssetInfo {
 export function createGenerateMemeTool(input: PluginInput) {
   const definition = {
     description:
-      "Generate a meme image from a short natural-language prompt. Pick the template internally unless the user explicitly names one.",
+      "Generate a meme image from an emotional brief. Describe what happened, the feeling, the contrast, and any caption idea; the tool picks a bundled template unless one is explicitly named.",
     display: memeDisplay,
     args: generateMemeArgs,
     async execute(
