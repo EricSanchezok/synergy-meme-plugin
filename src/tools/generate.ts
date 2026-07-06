@@ -22,7 +22,7 @@ const memeDisplay = {
   media: {
     type: "image",
     aspectRatio: "auto",
-    size: "small",
+    size: "medium",
   },
 } as const;
 
@@ -345,7 +345,7 @@ export function createGenerateMemeTool(input: PluginInput) {
             url: uploaded.url,
             presentation: {
               renderer: "image",
-              size: "small",
+              size: "medium",
             },
           },
         ],

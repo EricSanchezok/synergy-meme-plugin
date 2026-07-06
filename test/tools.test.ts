@@ -295,13 +295,13 @@ describe("generate_meme", () => {
     expect(result.metadata.display.media).toEqual({
       type: "image",
       aspectRatio: "auto",
-      size: "small",
+      size: "medium",
     });
     expect(result.attachments).toHaveLength(1);
     expect(result.attachments[0].url).toBe("asset://asset-test");
     expect(result.attachments[0].presentation).toEqual({
       renderer: "image",
-      size: "small",
+      size: "medium",
     });
     expect(result.metadata.display.primaryAttachmentIds).toBeUndefined();
   });
