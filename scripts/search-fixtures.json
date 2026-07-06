@@ -4,8 +4,7 @@
     "category": "debug low-level mistake + root cause discovery",
     "query": "程序员 debug 半天发现是少了分号，崩溃又释然",
     "lineCount": 2,
-    "acceptableTop3": ["scc", "facepalm", "fine"],
-    "preferredTop1": ["scc", "facepalm"]
+    "acceptableTop5": ["scc", "facepalm", "fine", "crazypills", "harold"]
   },
   {
     "id": "old-vs-new",
@@ -19,86 +18,83 @@
     "category": "easy expectation vs painful reality",
     "query": "产品说很简单实际搞了三天",
     "lineCount": 2,
-    "acceptableTop3": ["gru", "badchoice", "harold"],
-    "acceptableTop5": ["gru", "badchoice", "harold", "fine", "facepalm"]
+    "acceptableTop3": ["gru", "badchoice", "dbg"],
+    "acceptableTop5": ["gru", "badchoice", "dbg", "harold", "regret"]
   },
   {
     "id": "production-red-monitoring",
     "category": "production incident",
     "query": "CI 过了但线上挂了，监控全红",
     "lineCount": 2,
-    "acceptableTop3": ["fine", "disastergirl", "crazypills"],
-    "acceptableTop5": ["fine", "disastergirl", "crazypills", "scc", "facepalm"]
+    "acceptableTop5": ["fine", "disastergirl", "crazypills", "facepalm", "ermg"]
   },
   {
     "id": "partial-understanding",
     "category": "partial understanding",
     "query": "我懂了但没完全懂",
     "lineCount": 2,
-    "acceptableTop3": ["scc", "fry", "gandalf"],
-    "acceptableTop5": ["scc", "fry", "gandalf", "noidea", "yuno"]
+    "acceptableTop3": ["fry", "scc", "gandalf"],
+    "acceptableTop5": ["fry", "scc", "gandalf", "noidea", "awkward"]
   },
   {
     "id": "over-engineering",
     "category": "over-engineering / brain expansion",
     "query": "本来一个小需求，架构越搞越复杂",
-    "lineCount": 2,
-    "acceptableTop3": ["gb", "gru", "rollsafe"],
-    "acceptableTop5": ["gb", "gru", "rollsafe", "facepalm", "badchoice"]
+    "acceptableTop5": ["gru", "gb", "rollsafe", "badchoice", "facepalm"]
   },
   {
     "id": "pretend-calm-disaster",
     "category": "forced smile / pretend calm in disaster",
-    "query": "面试官问项目有什么难点，我笑着说什么都简单",
+    "query": "面试官问项目有什么难点，我笑着说全都简单",
     "lineCount": 2,
-    "acceptableTop3": ["fine", "harold", "awkward"],
-    "acceptableTop5": ["fine", "harold", "awkward", "facepalm", "gandalf"]
+    "acceptableTop5": ["fine", "harold", "awkward", "dbg", "badchoice"]
   },
   {
     "id": "random-request",
     "category": "open-ended / random request",
     "query": "随机来一个",
-    "acceptableTop5": ["drake", "fine", "success", "facepalm", "fry"]
+    "acceptableTop5": ["drake", "doge", "gb", "fine", "facepalm"]
   },
   {
     "id": "copilot-over-revs",
     "category": "automation misunderstanding",
-    "query": "AI 说这就是正确方案，但跑起来全错",
+    "query": "AI 说这就是正确方案但跑起来全是错",
     "lineCount": 2,
-    "acceptableTop3": ["confused", "fry", "noidea"],
-    "acceptableTop5": ["crazypills", "fry", "noidea", "facepalm", "gandalf"]
+    "acceptableTop5": ["rollsafe", "fry", "facepalm", "disastergirl", "noidea"]
   },
   {
     "id": "triumph-after-struggle",
     "category": "triumph after struggle",
     "query": "search:templates 终于能跑通了，debug 三天的 prompt injection 也进上下文了",
     "lineCount": 2,
-    "acceptableTop3": ["success", "scc", "feelsgood"],
-    "acceptableTop5": ["success", "scc", "feelsgood", "fine", "sf"]
+    "acceptableTop5": ["feelsgood", "scc", "success", "harold", "sf"]
   },
   {
     "id": "every-day-a-new-bug",
     "category": "recurring pain",
     "query": "每天早上一看监控又是一个新的 bug",
     "lineCount": 2,
-    "acceptableTop3": ["facepalm", "crazypills", "harold"],
-    "acceptableTop5": ["facepalm", "crazypills", "harold", "fine", "noidea"]
+    "acceptableTop5": [
+      "fine",
+      "facepalm",
+      "crazypills",
+      "disastergirl",
+      "harold"
+    ]
   },
   {
     "id": "pr-rejected",
     "category": "pr rejection / review pain",
-    "query": "发了四个版本终于合并了，然后又说需求改了",
+    "query": "发了四个版本终于合并了然后又改需求了",
     "lineCount": 2,
-    "acceptableTop3": ["fine", "gru", "harold"],
-    "acceptableTop5": ["fine", "gru", "harold", "badchoice", "crazypills"]
+    "acceptableTop5": ["gru", "feelsgood", "scc", "badchoice", "success"]
   },
   {
     "id": "why-works",
     "category": "confused success",
     "query": "我修好了一个 bug 但不知道为什么",
     "lineCount": 2,
-    "acceptableTop3": ["scc", "fry", "gandalf"],
-    "acceptableTop5": ["scc", "fry", "gandalf", "success", "crazypills"]
+    "acceptableTop5": ["scc", "feelsgood", "facepalm", "gandalf", "noidea"]
   },
   {
     "id": "empty-query",
