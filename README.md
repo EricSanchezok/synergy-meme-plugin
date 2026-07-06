@@ -27,6 +27,7 @@ bun run sign:plugin synergy-meme-plugin-0.3.7.synergy-plugin.tgz
 # Inspect template ranking while tuning search semantics.
 bun run search:templates -- "程序员 debug 半天发现少了分号" --lines 2 --limit 10
 bun run search:templates -- "old way vs new way" --lines 2 --json
+bun run eval:search               # run fixture evaluation and see coverage stats
 ```
 
 ## Tools
