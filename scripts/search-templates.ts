@@ -1,7 +1,7 @@
 import { templates } from "../src/data/templates.generated";
 import {
   isRandomMemeRequest,
-  searchMemeTemplates,
+  searchMemeTemplateCandidates,
   type MemeTemplateSearchInput,
 } from "../src/tools/search";
 
@@ -113,17 +113,8 @@ function truncate(value: string, width: number) {
   return `${value.slice(0, width - 1)}…`;
 }
 
-async function searchCandidates(options: CliOptions) {
-  const result = (await searchMemeTemplates.execute(options, {
-    sessionID: "search-templates-cli",
-    messageID: "search-templates-cli",
-    agent: "search-templates-cli",
-    abort: new AbortController().signal,
-  } as any)) as { output: string };
-  return JSON.parse(result.output) as {
-    guidance: string;
-    candidates: Array<any>;
-  };
+function searchCandidates(options: CliOptions) {
+  return searchMemeTemplateCandidates(options);
 }
 
 async function printText(options: CliOptions) {

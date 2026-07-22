@@ -1,5 +1,8 @@
 import { templates } from "../src/data/templates.generated";
-import { searchMemeTemplates } from "../src/tools/search";
+import {
+  searchMemeTemplateCandidates,
+  type MemeTemplateSearchInput,
+} from "../src/tools/search";
 
 // ---- Types ----
 
@@ -50,27 +53,18 @@ function truncate(value: string, width: number): string {
 // ---- Main ----
 
 async function runFixture(fixture: Fixture): Promise<FixtureResult> {
-  const args: Record<string, unknown> = {};
-  if (fixture.query) args.query = fixture.query;
-  if (fixture.lineCount) args.lineCount = fixture.lineCount;
-  if (fixture.style) args.style = fixture.style;
-  if (fixture.minLines) args.minLines = fixture.minLines;
-  if (fixture.query === "" || (!fixture.query && !fixture.acceptEmpty))
-    args.query = "";
-
-  const limit = 8;
-  const result = (await searchMemeTemplates.execute({ ...args, limit }, {
-    sessionID: "eval-search",
-    messageID: "eval-search",
-    agent: "eval-search",
-    abort: new AbortController().signal,
-  } as any)) as { output: string };
-
-  const parsed = JSON.parse(result.output) as {
-    guidance: string;
-    candidates: Candidate[];
+  const args: MemeTemplateSearchInput = {
+    query:
+      fixture.query === "" || (!fixture.query && !fixture.acceptEmpty)
+        ? ""
+        : fixture.query,
+    limit: 8,
+    lineCount: fixture.lineCount,
+    style: fixture.style,
+    minLines: fixture.minLines,
   };
-  const candidates = parsed.candidates.slice(0, limit);
+  const parsed = searchMemeTemplateCandidates(args);
+  const candidates: Candidate[] = parsed.candidates;
 
   let top3Pass: boolean | null = null;
   if (fixture.acceptableTop3 && fixture.acceptableTop3.length > 0) {

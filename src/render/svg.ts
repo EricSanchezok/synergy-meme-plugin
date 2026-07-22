@@ -3,7 +3,6 @@ import type { MemeTemplate } from "../data/types";
 import { type TextRegion, textRegions } from "./layout-overrides";
 
 export interface RenderMemeInput {
-  pluginDir: string;
   template: MemeTemplate;
   lines: string[];
   layout: "default" | "top" | "center";
@@ -20,14 +19,10 @@ const FONT_FAMILY = "SynergyMemeAnton";
 const WIDTH_UNIT = 0.82;
 const MIN_FONT_SIZE = 16;
 
-async function firstExisting(paths: string[], label: string) {
-  for (const candidate of paths) {
-    if (await Bun.file(candidate).exists()) return candidate;
-  }
-  throw new Error(
-    `${label} not found. Run "bun run sync:templates" and rebuild the plugin.`,
-  );
-}
+const ASSET_ROOT =
+  process.env.SYNERGY_PLUGIN_BUNDLE_TARGET === "runtime"
+    ? import.meta.dir
+    : path.resolve(import.meta.dir, "../../public");
 
 async function dataUri(filepath: string, mime: string) {
   const bytes = Buffer.from(await Bun.file(filepath).arrayBuffer());
@@ -186,20 +181,19 @@ function fitText(input: {
 export async function renderMemeSvg(
   input: RenderMemeInput,
 ): Promise<RenderedMeme> {
-  const templatePath = await firstExisting(
-    [
-      path.join(input.pluginDir, input.template.assetPath),
-      path.join(input.pluginDir, "public", input.template.assetPath),
-    ],
-    `Template ${input.template.id}`,
-  );
-  const fontPath = await firstExisting(
-    [
-      path.join(input.pluginDir, "assets/fonts/Anton-Regular.ttf"),
-      path.join(input.pluginDir, "public/assets/fonts/Anton-Regular.ttf"),
-    ],
-    "Anton font",
-  );
+  const templatePath = path.join(ASSET_ROOT, input.template.assetPath);
+  const fontPath = path.join(ASSET_ROOT, "assets/fonts/Anton-Regular.ttf");
+
+  if (!(await Bun.file(templatePath).exists())) {
+    throw new Error(
+      `Template ${input.template.id} not found. Run "bun run sync:templates" and rebuild the plugin.`,
+    );
+  }
+  if (!(await Bun.file(fontPath).exists())) {
+    throw new Error(
+      'Anton font not found. Run "bun run sync:templates" and rebuild the plugin.',
+    );
+  }
 
   const width = input.template.width;
   const height = input.template.height;

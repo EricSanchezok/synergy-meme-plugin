@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import path from "node:path";
 import { templateById } from "../src/data/templates.generated";
 import { renderMemeSvg } from "../src/render/svg";
-
-const pluginDir = path.resolve(import.meta.dir, "..");
 
 function textRows(svg: string) {
   return [
@@ -37,7 +34,6 @@ describe("renderMemeSvg", () => {
       expect(template).toBeDefined();
 
       const rendered = await renderMemeSvg({
-        pluginDir,
         template,
         lines: Array.from(
           { length: Math.min(template.lines, 2) },
@@ -62,7 +58,6 @@ describe("renderMemeSvg", () => {
   test("wraps long Chinese Drake captions inside the right-side text regions", async () => {
     const template = templateById.drake;
     const rendered = await renderMemeSvg({
-      pluginDir,
       template,
       lines: ["还在用官方缓存包 调试半天不生效", "切到本地路径 立刻跑通"],
       layout: "default",
@@ -84,7 +79,6 @@ describe("renderMemeSvg", () => {
   test("wraps Chinese text without natural spaces", async () => {
     const template = templateById.drake;
     const rendered = await renderMemeSvg({
-      pluginDir,
       template,
       lines: ["完全没有空格但是非常长的中文需求应该自动换行", "短句"],
       layout: "default",

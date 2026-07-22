@@ -1,4 +1,5 @@
-import { tool } from "@ericsanchezok/synergy-plugin/tool";
+import { tool } from "@ericsanchezok/synergy-plugin";
+import z from "zod";
 import { templates } from "../data/templates.generated";
 import type { MemeTemplate } from "../data/types";
 import {
@@ -19,6 +20,37 @@ export interface MemeTemplateSearchInput {
   style?: string;
   minLines?: number;
 }
+
+type SearchMemeTemplatesArgs = Omit<MemeTemplateSearchInput, "minLines">;
+
+const SearchMemeTemplatesInputSchema = z.object({
+  query: z
+    .string()
+    .optional()
+    .describe("Search text, for example drake, distracted, brain, choice."),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Maximum number of templates to return."),
+  lineCount: z
+    .number()
+    .int()
+    .min(1)
+    .max(8)
+    .optional()
+    .describe(
+      "Prefer templates supporting this number of caption lines. Results may include nearby fits.",
+    ),
+  style: z
+    .string()
+    .optional()
+    .describe("Only return templates supporting this style."),
+});
+const SearchMemeTemplatesInputJsonSchema: Record<string, unknown> =
+  z.toJSONSchema(SearchMemeTemplatesInputSchema);
 
 // ---- Constants ----
 
@@ -513,69 +545,45 @@ function candidateKeywords(t: MemeTemplate): string[] {
 
 // ---- Internal tool ----
 
-export const searchMemeTemplates = tool({
+export function searchMemeTemplateCandidates(input: MemeTemplateSearchInput) {
+  const candidates = rankMemeTemplates(input).map(({ template, score }) => ({
+    id: template.id,
+    name: template.name,
+    lines: template.lines,
+    styles: template.styles,
+    score: Number(score.toFixed(2)),
+    bestFor: templateGuidance(template),
+    keywords: candidateKeywords(template),
+    fit: input.lineCount
+      ? template.lines === input.lineCount
+        ? "exact"
+        : template.lines > input.lineCount
+          ? "supports-extra-lines"
+          : "fewer-lines"
+      : "unspecified",
+  }));
+  return {
+    guidance: isRandomMemeRequest(input.query)
+      ? "The request is open-ended. Pick a recognizable candidate that has not been overused in the current conversation; do not always choose the first result."
+      : "Pick the candidate whose keywords and line count best match the user's intent.",
+    candidates,
+  };
+}
+
+export const searchMemeTemplates = tool<SearchMemeTemplatesArgs>({
+  id: "search_meme_templates",
   description:
     "Search bundled meme templates by id, name, keyword, style, or line count.",
-  exposure: { mode: "internal" } as any,
-  args: {
-    query: tool.schema
-      .string()
-      .optional()
-      .describe("Search text, for example drake, distracted, brain, choice."),
-    limit: tool.schema
-      .number()
-      .int()
-      .min(1)
-      .max(50)
-      .optional()
-      .describe("Maximum number of templates to return."),
-    lineCount: tool.schema
-      .number()
-      .int()
-      .min(1)
-      .max(8)
-      .optional()
-      .describe(
-        "Prefer templates supporting this number of caption lines. Results may include nearby fits.",
-      ),
-    style: tool.schema
-      .string()
-      .optional()
-      .describe("Only return templates supporting this style."),
-  },
-  async execute(args) {
-    const matches = rankMemeTemplates(args).map(({ template, score }) => ({
-      id: template.id,
-      name: template.name,
-      lines: template.lines,
-      styles: template.styles,
-      score: Number(score.toFixed(2)),
-      bestFor: templateGuidance(template),
-      keywords: candidateKeywords(template),
-      fit: args.lineCount
-        ? template.lines === args.lineCount
-          ? "exact"
-          : template.lines > args.lineCount
-            ? "supports-extra-lines"
-            : "fewer-lines"
-        : "unspecified",
-    }));
-
+  exposure: { mode: "internal" },
+  input: SearchMemeTemplatesInputJsonSchema,
+  async handler(args) {
+    const payload = searchMemeTemplateCandidates(args);
     return {
       title: "Meme templates",
-      output: JSON.stringify(
-        {
-          guidance: isRandomMemeRequest(args.query)
-            ? "The request is open-ended. Pick a recognizable candidate that has not been overused in the current conversation; do not always choose the first result."
-            : "Pick the candidate whose keywords and line count best match the user's intent.",
-          candidates: matches,
-        },
-        null,
-        2,
-      ),
+      output: JSON.stringify(payload, null, 2),
       metadata: {
         query: args.query ?? "",
-        count: matches.length,
+        count: payload.candidates.length,
         totalTemplates: templates.length,
       },
     };

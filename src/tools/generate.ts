@@ -1,9 +1,9 @@
-import type { PluginInput } from "@ericsanchezok/synergy-plugin";
 import {
   tool,
-  type ToolContext,
-  type ToolResult,
-} from "@ericsanchezok/synergy-plugin/tool";
+  type PluginInvocationContext,
+  type PluginToolResult,
+} from "@ericsanchezok/synergy-plugin";
+import z from "zod";
 
 import {
   PICK_TOOL_ID,
@@ -26,65 +26,49 @@ const memeDisplay = {
   },
 } as const;
 
-const generateMemeArgs = {
-  prompt: tool.schema
+const GenerateMemeInput = z.object({
+  prompt: z
     .string()
     .min(1)
     .max(600)
     .describe(
       "Emotional meme brief. Include the situation, feeling, contrast, and optional caption idea, e.g. 'After chasing a schema bug for an hour, it was the old package all along; relieved but slightly haunted.'",
     ),
-  template: tool.schema
+  template: z
     .string()
     .min(1)
     .optional()
     .describe("Optional template id, for example drake, db, gb, astronaut."),
-  lines: tool.schema
-    .array(tool.schema.string().min(1).max(180))
+  lines: z
+    .array(z.string().min(1).max(180))
     .min(1)
     .max(8)
     .optional()
     .describe("Text lines to render onto the template."),
-  style: tool.schema
+  style: z
     .string()
     .optional()
     .describe("Optional memegen style name when the template supports it."),
-  layout: tool.schema
+  layout: z
     .enum(["default", "top", "center"])
     .optional()
     .describe(
       "Text placement strategy. Use default unless the user requests top-only or centered text.",
     ),
-  captionCase: tool.schema
+  captionCase: z
     .enum(["uppercase", "preserve"])
     .optional()
     .describe("Whether to uppercase meme text. Defaults to uppercase."),
-};
+});
 
-type GenerateMemeArgs = {
-  prompt: string;
-  template?: string;
-  lines?: string[];
-  style?: string;
-  layout?: "default" | "top" | "center";
-  captionCase?: "uppercase" | "preserve";
-};
-
-type AssetInfo = {
-  id: string;
-  url: string;
-  mime: string;
-  size: number;
-};
+type GenerateMemeArgs = z.infer<typeof GenerateMemeInput>;
+const GenerateMemeJsonSchema: Record<string, unknown> =
+  z.toJSONSchema(GenerateMemeInput);
 
 function safeName(value: string) {
   return (
     value.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "meme"
   );
-}
-
-function attachmentPartId() {
-  return `part_meme_${Date.now().toString(36)}_${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}`;
 }
 
 function isAbortError(error: unknown) {
@@ -167,7 +151,7 @@ function deterministicPlan(args: GenerateMemeArgs): MemePlan | undefined {
 
 async function planWithSubagent(
   args: GenerateMemeArgs,
-  context: ToolContext,
+  context: PluginInvocationContext,
 ): Promise<MemePlan | undefined> {
   const task = context.task;
   if (!task?.run) return undefined;
@@ -219,137 +203,109 @@ async function planWithSubagent(
   return parsed.success ? parsed.data : undefined;
 }
 
-function unwrapAssetInfo(result: unknown): AssetInfo {
-  const data = (result as any)?.data ?? result;
-  if (
-    !data ||
-    typeof data !== "object" ||
-    typeof (data as any).url !== "string"
-  ) {
-    throw new Error("Synergy asset upload did not return an asset URL");
-  }
-  return data as AssetInfo;
-}
+export const generateMeme = tool<GenerateMemeArgs>({
+  id: "generate_meme",
+  description:
+    "Generate a meme image from an emotional brief. Use this as a lightweight emotional expression channel before a light task, during a funny or ironic moment, or after satisfying progress when a meme would make the interaction warmer, funnier, more companionable, or better matched to the user's playful tone. Good triggers include explicit user playfulness, clear emotional contrast, a surprising twist, a funny minor mistake, long effort paying off, or a celebratory milestone. Coding and tool moments can qualify too, such as a fix/build/test passing, a funny bug cause, or ironic tool behavior. Do not use memes for serious failures, security/privacy issues, user frustration, grief, sensitive topics, or dense technical review. Use at most once per short exchange. The prompt should vividly describe what happened, the feeling, the contrast, and any caption idea. The tool delegates to a hidden planner, then falls back deterministically when planning is unavailable.",
+  requires: ["task.delegate", "asset.write"],
+  display: memeDisplay,
+  input: GenerateMemeJsonSchema,
+  async handler(
+    args: GenerateMemeArgs,
+    context: PluginInvocationContext,
+  ): Promise<PluginToolResult> {
+    const requestedTemplate = args.template?.trim().toLocaleLowerCase();
+    const requestedStyle = args.style?.trim();
+    const subagentPlan = await planWithSubagent(args, context).catch(
+      (error) => {
+        if (isAbortError(error) || context.signal.aborted) throw error;
+        return undefined;
+      },
+    );
+    if (context.signal.aborted) throw new Error("Meme generation was aborted.");
+    const plan = subagentPlan ?? deterministicPlan(args);
+    const template = plan ? templateById[plan.template] : undefined;
 
-export function createGenerateMemeTool(input: PluginInput) {
-  const definition = {
-    description:
-      "Generate a meme image from an emotional brief. Use this as a lightweight emotional expression channel before a light task, during a funny or ironic moment, or after satisfying progress when a meme would make the interaction warmer, funnier, more companionable, or better matched to the user's playful tone. Good triggers include explicit user playfulness, clear emotional contrast, a surprising twist, a funny minor mistake, long effort paying off, or a celebratory milestone. Coding and tool moments can qualify too, but do not limit meme use to engineering work. Do not use for serious failures, security or privacy issues, user frustration, grief, sensitive topics, dense technical review, or when an attachment would interrupt focused work. Use at most once per short exchange. Describe what happened, the feeling, the contrast, and any caption idea; the tool picks a bundled template unless one is explicitly named.",
-    display: memeDisplay,
-    args: generateMemeArgs,
-    async execute(
-      args: GenerateMemeArgs,
-      context: ToolContext,
-    ): Promise<ToolResult> {
-      const requestedTemplate = args.template?.trim().toLocaleLowerCase();
-      const requestedStyle = args.style?.trim();
-      const subagentPlan = await planWithSubagent(args, context).catch(
-        (error) => {
-          if (isAbortError(error) || context.abort.aborted) throw error;
-          return undefined;
-        },
-      );
-      if (context.abort.aborted)
-        throw new Error("Meme generation was aborted.");
-      const plan = subagentPlan ?? deterministicPlan(args);
-      const template = plan ? templateById[plan.template] : undefined;
-
-      if (!template) {
-        return {
-          title: "No meme template found",
-          output: "No bundled meme template matched the request.",
-          metadata: {
-            prompt: args.prompt,
-            requestedTemplate,
-            error: "template_not_found",
-          },
-        };
-      }
-
-      const lines = plan?.lines.map(cleanLine).filter(Boolean) ?? [];
-      if (lines.length === 0) {
-        return {
-          title: "Missing meme text",
-          output: "Provide a prompt or at least one non-empty text line.",
-          metadata: {
-            prompt: args.prompt,
-            template: template.id,
-            error: "missing_lines",
-          },
-        };
-      }
-      if (lines.length > template.lines) {
-        return {
-          title: "Too many meme lines",
-          output: `Template "${template.name}" (${template.id}) supports ${template.lines} line(s), but ${lines.length} were provided.`,
-          metadata: {
-            prompt: args.prompt,
-            template: template.id,
-            supportedLines: template.lines,
-            providedLines: lines.length,
-          },
-        };
-      }
-
-      const rawEffectiveStyle = plan?.style ?? requestedStyle;
-      const effectiveStyle =
-        rawEffectiveStyle && template.styles.includes(rawEffectiveStyle)
-          ? rawEffectiveStyle
-          : undefined;
-
-      const rendered = await renderMemeSvg({
-        pluginDir: input.pluginDir,
-        template,
-        lines,
-        layout: plan?.layout ?? args.layout ?? "default",
-        captionCase: plan?.captionCase ?? args.captionCase ?? "uppercase",
-      });
-
-      const filename = `${safeName(template.id)}-${Date.now().toString(36)}.svg`;
-      const file = new File([rendered.svg], filename, {
-        type: "image/svg+xml",
-      });
-      const uploaded = unwrapAssetInfo(
-        await input.client.asset.upload(
-          { file } as any,
-          { throwOnError: true } as any,
-        ),
-      );
-      const partId = attachmentPartId();
-
+    if (!template) {
       return {
-        title: template.name,
-        output: `Generated meme "${template.name}" (${template.id}) with ${lines.length} caption line${lines.length === 1 ? "" : "s"}.`,
+        title: "No meme template found",
+        output: "No bundled meme template matched the request.",
+        metadata: {
+          prompt: args.prompt,
+          requestedTemplate,
+          error: "template_not_found",
+        },
+      };
+    }
+
+    const lines = plan?.lines.map(cleanLine).filter(Boolean) ?? [];
+    if (lines.length === 0) {
+      return {
+        title: "Missing meme text",
+        output: "Provide a prompt or at least one non-empty text line.",
         metadata: {
           prompt: args.prompt,
           template: template.id,
-          templateName: template.name,
-          requestedTemplate,
-          lines,
-          planner: subagentPlan ? "subagent" : "fallback",
-          style: effectiveStyle ?? "default",
-          dimensions: { width: rendered.width, height: rendered.height },
-          assetId: uploaded.id,
-          display: memeDisplay,
+          error: "missing_lines",
         },
-        attachments: [
-          {
-            id: partId,
-            sessionID: context.sessionID,
-            messageID: context.messageID,
-            type: "attachment",
-            mime: "image/svg+xml",
-            filename,
-            url: uploaded.url,
-            presentation: {
-              renderer: "image",
-              size: "medium",
-            },
-          },
-        ],
       };
-    },
-  };
+    }
+    if (lines.length > template.lines) {
+      return {
+        title: "Too many meme lines",
+        output: `Template "${template.name}" (${template.id}) supports ${template.lines} line(s), but ${lines.length} were provided.`,
+        metadata: {
+          prompt: args.prompt,
+          template: template.id,
+          supportedLines: template.lines,
+          providedLines: lines.length,
+        },
+      };
+    }
 
-  return tool(definition);
-}
+    const rawEffectiveStyle = plan?.style ?? requestedStyle;
+    const effectiveStyle =
+      rawEffectiveStyle && template.styles.includes(rawEffectiveStyle)
+        ? rawEffectiveStyle
+        : undefined;
+
+    const rendered = await renderMemeSvg({
+      template,
+      lines,
+      layout: plan?.layout ?? args.layout ?? "default",
+      captionCase: plan?.captionCase ?? args.captionCase ?? "uppercase",
+    });
+
+    const filename = `${safeName(template.id)}-${Date.now().toString(36)}.svg`;
+    if (!context.asset) {
+      throw new Error("Meme generation requires the asset.write Host Service.");
+    }
+    const attachment = await context.asset.create({
+      data: rendered.svg,
+      mime: "image/svg+xml",
+      filename,
+      presentation: {
+        renderer: "image",
+        size: "medium",
+      },
+    });
+
+    return {
+      title: template.name,
+      output: `Generated meme "${template.name}" (${template.id}) with ${lines.length} caption line${lines.length === 1 ? "" : "s"}.`,
+      metadata: {
+        prompt: args.prompt,
+        template: template.id,
+        templateName: template.name,
+        requestedTemplate,
+        lines,
+        planner: subagentPlan ? "subagent" : "fallback",
+        style: effectiveStyle ?? "default",
+        dimensions: { width: rendered.width, height: rendered.height },
+        assetId: attachment.id,
+        display: memeDisplay,
+      },
+      attachments: [attachment],
+    };
+  },
+});
