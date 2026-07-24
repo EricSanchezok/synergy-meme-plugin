@@ -87,6 +87,9 @@ describe("Plugin API 3 descriptor", () => {
       "tool:pick_meme",
       "hook:meme-expression",
     ]);
+    expect(contribution("tool", "generate_meme")).not.toHaveProperty(
+      "exposure",
+    );
   });
 
   test("keeps the planner hidden with only its two helper tools allowed", () => {
