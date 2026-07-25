@@ -24,7 +24,7 @@ Useful commands:
 bun run validate:plugin
 bun run build:plugin
 bun run pack:plugin
-bun run sign:plugin synergy-meme-plugin-0.3.8.synergy-plugin.tgz
+bun run sign:plugin synergy-meme-plugin-0.3.9.synergy-plugin.tgz
 
 # Inspect template ranking while tuning search semantics.
 bun run search:templates -- "程序员 debug 半天发现少了分号" --lines 2 --limit 10
@@ -49,8 +49,8 @@ This runs the Synergy Plugin Kit official marketplace flow for `https://github.c
 For manual registry preparation:
 
 ```bash
-synergy-plugin entry synergy-meme-plugin-0.3.8.synergy-plugin.tgz \
+synergy-plugin entry synergy-meme-plugin-0.3.9.synergy-plugin.tgz \
   --repo https://github.com/EricSanchezok/synergy-meme-plugin \
-  --download-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.8/synergy-meme-plugin-0.3.8.synergy-plugin.tgz \
-  --signature-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.8/synergy-meme-plugin-0.3.8.synergy-plugin.tgz.sig
+  --download-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.9/synergy-meme-plugin-0.3.9.synergy-plugin.tgz \
+  --signature-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.9/synergy-meme-plugin-0.3.9.synergy-plugin.tgz.sig
 ```

@@ -35,7 +35,7 @@ function shouldInjectMemeExpression(input: { agent: string; small?: boolean }) {
 export const plugin = definePlugin({
   id: PLUGIN_ID,
   name: "Synergy Meme Plugin",
-  version: "0.3.8",
+  version: "0.3.9",
   description:
     "Generate expressive meme images from bundled memegen.link templates.",
   author: "EricSanchez",

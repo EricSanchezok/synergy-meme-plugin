@@ -25,7 +25,7 @@ function invocationContext(
     sessionId: "session-test",
     runtime: {
       hostVersion: "test",
-      pluginVersion: "0.3.8",
+      pluginVersion: "0.3.9",
       pluginGeneration: "generation-test",
       protocolVersion: 5,
     },
@@ -54,7 +54,7 @@ describe("Plugin API 3 descriptor", () => {
     expect(plugin).toMatchObject({
       id: "synergy-meme-plugin",
       name: "Synergy Meme Plugin",
-      version: "0.3.8",
+      version: "0.3.9",
       capabilities: [
         {
           id: "task.delegate",

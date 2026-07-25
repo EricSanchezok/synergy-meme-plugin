@@ -31,7 +31,7 @@ function invocationContext(
     sessionId: "session-test",
     runtime: {
       hostVersion: "test",
-      pluginVersion: "0.3.8",
+      pluginVersion: "0.3.9",
       pluginGeneration: "generation-test",
       protocolVersion: 5,
     },
