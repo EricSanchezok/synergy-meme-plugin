@@ -2,7 +2,7 @@
 
 Synergy plugin for generating meme images from bundled memegen.link templates.
 
-The plugin is fully local at runtime: templates and the Anton font are declared as packaged API3 assets, and generated SVG bytes are stored through the host `asset.create()` service as `image/svg+xml` attachments.
+The plugin is fully local at runtime: templates and the Anton font are declared as packaged Plugin API 4 assets, and generated SVG bytes are stored through the host `asset.create()` service as `image/svg+xml` attachments.
 
 Template metadata and blank images are snapshotted from the public [memegen.link templates API](https://api.memegen.link/templates/). The renderer uses bundled local template images and the bundled Anton font at runtime, so generation does not need network access.
 
@@ -24,7 +24,7 @@ Useful commands:
 bun run validate:plugin
 bun run build:plugin
 bun run pack:plugin
-bun run sign:plugin synergy-meme-plugin-0.3.9.synergy-plugin.tgz
+bun run sign:plugin synergy-meme-plugin-0.4.0.synergy-plugin.tgz
 
 # Inspect template ranking while tuning search semantics.
 bun run search:templates -- "程序员 debug 半天发现少了分号" --lines 2 --limit 10
@@ -49,8 +49,8 @@ This runs the Synergy Plugin Kit official marketplace flow for `https://github.c
 For manual registry preparation:
 
 ```bash
-synergy-plugin entry synergy-meme-plugin-0.3.9.synergy-plugin.tgz \
+synergy-plugin entry synergy-meme-plugin-0.4.0.synergy-plugin.tgz \
   --repo https://github.com/EricSanchezok/synergy-meme-plugin \
-  --download-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.9/synergy-meme-plugin-0.3.9.synergy-plugin.tgz \
-  --signature-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.3.9/synergy-meme-plugin-0.3.9.synergy-plugin.tgz.sig
+  --download-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.4.0/synergy-meme-plugin-0.4.0.synergy-plugin.tgz \
+  --signature-url https://github.com/EricSanchezok/synergy-meme-plugin/releases/download/v0.4.0/synergy-meme-plugin-0.4.0.synergy-plugin.tgz.sig
 ```

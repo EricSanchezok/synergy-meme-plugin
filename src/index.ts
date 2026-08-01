@@ -35,9 +35,10 @@ function shouldInjectMemeExpression(input: { agent: string; small?: boolean }) {
 export const plugin = definePlugin({
   id: PLUGIN_ID,
   name: "Synergy Meme Plugin",
-  version: "0.3.9",
+  version: "0.4.0",
   description:
     "Generate expressive meme images from bundled memegen.link templates.",
+  compatibility: { synergy: ">=3.0.11" },
   author: "EricSanchez",
   homepage: "https://github.com/EricSanchezok/synergy-meme-plugin",
   repository: "https://github.com/EricSanchezok/synergy-meme-plugin",
@@ -83,9 +84,9 @@ export const plugin = definePlugin({
     generateMeme,
     searchMemeTemplates,
     pickMeme,
-    hook<"experimental.chat.system.transform">({
+    hook<"chat.system.transform">({
       id: "meme-expression",
-      point: "experimental.chat.system.transform",
+      point: "chat.system.transform",
       async handler(input) {
         if (!shouldInjectMemeExpression(input)) return { system: input.system };
         if (
