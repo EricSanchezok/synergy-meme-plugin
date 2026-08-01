@@ -25,9 +25,9 @@ function invocationContext(
     sessionId: "session-test",
     runtime: {
       hostVersion: "test",
-      pluginVersion: "0.3.9",
+      pluginVersion: "0.4.0",
       pluginGeneration: "generation-test",
-      protocolVersion: 5,
+      protocolVersion: 9,
     },
     actor: {
       type: "agent",
@@ -49,12 +49,13 @@ function invocationContext(
   };
 }
 
-describe("Plugin API 3 descriptor", () => {
+describe("Plugin API 4 descriptor", () => {
   test("declares identity, capabilities, packaged assets, and flat contributions", () => {
     expect(plugin).toMatchObject({
       id: "synergy-meme-plugin",
       name: "Synergy Meme Plugin",
-      version: "0.3.9",
+      version: "0.4.0",
+      compatibility: { synergy: ">=3.0.11" },
       capabilities: [
         {
           id: "task.delegate",
@@ -87,6 +88,9 @@ describe("Plugin API 3 descriptor", () => {
       "tool:pick_meme",
       "hook:meme-expression",
     ]);
+    expect(contribution("hook", "meme-expression")).toMatchObject({
+      point: "chat.system.transform",
+    });
     expect(contribution("tool", "generate_meme")).not.toHaveProperty(
       "exposure",
     );
@@ -118,9 +122,9 @@ describe("Plugin API 3 descriptor", () => {
     const transform = contribution(
       "hook",
       "meme-expression",
-    ) as HookContribution<"experimental.chat.system.transform">;
+    ) as HookContribution<"chat.system.transform">;
 
-    const base: PluginHookPointInputs["experimental.chat.system.transform"] = {
+    const base: PluginHookPointInputs["chat.system.transform"] = {
       phase: "final",
       sessionID: "session-test",
       agent: "synergy-max",
@@ -153,7 +157,7 @@ describe("Plugin API 3 descriptor", () => {
   });
 });
 
-describe("Plugin API 3 generate_meme boundary", () => {
+describe("Plugin API 4 generate_meme boundary", () => {
   test("uses native task.run and returns the host-owned asset attachment directly", async () => {
     const generatedAttachment: PluginToolAttachment = {
       type: "attachment",

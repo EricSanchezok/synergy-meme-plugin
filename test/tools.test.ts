@@ -31,7 +31,7 @@ function invocationContext(
     sessionId: "session-test",
     runtime: {
       hostVersion: "test",
-      pluginVersion: "0.3.9",
+      pluginVersion: "0.4.0",
       pluginGeneration: "generation-test",
       protocolVersion: 5,
     },
@@ -268,8 +268,8 @@ describe("plugin descriptor", () => {
     const transform = contribution(
       "hook",
       "meme-expression",
-    ) as HookContribution<"experimental.chat.system.transform">;
-    const primaryInput: PluginHookPointInputs["experimental.chat.system.transform"] =
+    ) as HookContribution<"chat.system.transform">;
+    const primaryInput: PluginHookPointInputs["chat.system.transform"] =
       {
         phase: "final",
         sessionID: "session-test",
