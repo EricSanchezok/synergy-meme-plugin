@@ -17,7 +17,7 @@
     "sign:plugin": "synergy-plugin sign",
     "entry:plugin": "synergy-plugin entry",
     "publish:market": "synergy-plugin publish-market --repo https://github.com/EricSanchezok/synergy-meme-plugin",
-    "release:check": "bun run verify:templates && bun run typecheck && bun test && bun run validate:plugin && bun run build:plugin && bun run pack:plugin"
+    "release:check": "bun run verify:templates && bun run typecheck && bun test && bun run build:plugin && bun run validate:plugin && bun run pack:plugin"
   },
   "dependencies": {
     "@ericsanchezok/synergy-plugin": "^3.0.11",
