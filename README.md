@@ -12,6 +12,8 @@ Plugin identity, capabilities, packaged assets, hidden planner Agent, tools, and
 
 ## Development
 
+Plugin API 4 authoring requires `@ericsanchezok/synergy-plugin` and `@ericsanchezok/synergy-plugin-kit` 3.0.11 or newer. These package versions follow the Synergy product release; generated artifacts keep `apiVersion: "4.0"`.
+
 ```bash
 bun install
 bun run sync:templates
